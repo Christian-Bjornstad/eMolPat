@@ -32,12 +32,13 @@ def module_icon(module_id: str) -> QIcon:
 
 
 class StatusBanner(QFrame):
-    """Suite-level status with both iconography and explanatory text."""
+    """Compact portal health status with text and iconography."""
 
     def __init__(self, title: str, detail: str, ready: bool) -> None:
         super().__init__()
         self.setObjectName("statusBanner")
         self.setProperty("ready", ready)
+        self.setMaximumWidth(220)
 
         symbol = QLabel("✓" if ready else "!")
         symbol.setObjectName("statusSymbol")
@@ -49,20 +50,16 @@ class StatusBanner(QFrame):
         self.detail_label = QLabel(detail)
         self.detail_label.setObjectName("statusDetail")
         self.detail_label.setWordWrap(True)
-
-        copy = QVBoxLayout()
-        copy.setSpacing(2)
-        copy.addWidget(self.title_label)
-        copy.addWidget(self.detail_label)
+        self.detail_label.hide()
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 8, 12, 8)
+        layout.setSpacing(8)
         layout.addWidget(symbol)
-        layout.addLayout(copy, 1)
+        layout.addWidget(self.title_label)
 
     def text(self) -> str:
-        return f"{self.title_label.text()} {self.detail_label.text()}"
+        return self.title_label.text()
 
 
 class ApplicationCard(QFrame):

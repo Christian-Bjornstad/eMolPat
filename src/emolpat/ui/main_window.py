@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -25,7 +25,7 @@ STYLESHEET = """
 QMainWindow, QWidget#shell { background: #f4f7f8; color: #17393b; }
 QFrame#sidebar { background: #073f43; border: 0; }
 QLabel#brand { color: white; font-size: 25px; font-weight: 700; }
-QLabel#brandSubtitle, QLabel#suiteVersion { color: #b7d4d4; font-size: 12px; }
+QLabel#brandSubtitle, QLabel#versionLabel { color: #b7d4d4; font-size: 12px; }
 QPushButton#navigationButton { color: #d9e9e9; background: transparent; border: 0;
   border-radius: 6px; padding: 11px 14px; text-align: left; font-weight: 600; }
 QPushButton#navigationButton:hover { background: #125258; color: white; }
@@ -33,11 +33,13 @@ QPushButton#navigationButton:checked { background: #e4f2f0; color: #073f43; }
 QPushButton#navigationButton:focus { border: 2px solid #8fd0ca; }
 QLabel#pageTitle { color: #12383b; font-size: 25px; font-weight: 700; }
 QLabel#pageIntro { color: #567174; font-size: 14px; }
+QLabel#aboutCreator { color: #12383b; font-size: 14px; font-weight: 700; }
 QFrame#statusBanner { background: #fff7e6; border: 1px solid #e6c66a;
-  border-radius: 8px; }
+  border-radius: 7px; }
 QFrame#statusBanner[ready="true"] { background: #e8f5ef; border-color: #9acdb5; }
-QLabel#statusSymbol { background: #a16909; color: white; border-radius: 14px;
-  min-width: 28px; min-height: 28px; font-weight: 700; }
+QLabel#statusSymbol { background: #a16909; color: white; border-radius: 11px;
+  min-width: 22px; max-width: 22px; min-height: 22px; max-height: 22px;
+  font-weight: 700; }
 QFrame#statusBanner[ready="true"] QLabel#statusSymbol { background: #247a56; }
 QLabel#statusTitle { color: #17393b; font-weight: 700; }
 QLabel#statusDetail { color: #4b686a; }
@@ -115,11 +117,11 @@ class MainWindow(QMainWindow):
         brand.setObjectName("brand")
         subtitle = QLabel("Molekylærpatologi")
         subtitle.setObjectName("brandSubtitle")
-        version = QLabel(f"Suite {self.manifest.suite_version}")
-        version.setObjectName("suiteVersion")
+        self.version_label = QLabel(f"Versjon {self.manifest.suite_version}")
+        self.version_label.setObjectName("versionLabel")
         layout.addWidget(brand)
         layout.addWidget(subtitle)
-        layout.addWidget(version)
+        layout.addWidget(self.version_label)
         layout.addSpacing(26)
 
         group = QButtonGroup(self)
@@ -137,9 +139,20 @@ class MainWindow(QMainWindow):
             self.navigation_buttons.append(button)
         self.navigation_buttons[0].setChecked(True)
         layout.addStretch(1)
-        privacy = QLabel("Kun teknisk status\nIngen pasientdata lagres")
-        privacy.setObjectName("brandSubtitle")
-        layout.addWidget(privacy)
+        self.about_button = QPushButton("Om eMolPat")
+        self.about_button.setObjectName("navigationButton")
+        self.about_button.setCheckable(True)
+        self.about_button.setMinimumHeight(44)
+        self.about_button.setAccessibleName("Om eMolPat")
+        self.about_button.setAccessibleDescription(
+            "Les om eMolPat, analyseverktøyene og utvikleren"
+        )
+        self.about_button.clicked.connect(
+            lambda _checked: self.pages.setCurrentWidget(self.about_page)
+        )
+        group.addButton(self.about_button)
+        layout.addWidget(self.about_button)
+        self.navigation_buttons.append(self.about_button)
         return sidebar
 
     def _build_content(self) -> QWidget:
@@ -173,8 +186,36 @@ class MainWindow(QMainWindow):
                 "Ved feil kan teknisk støtte bruke eMolPat-loggen. Ingen kliniske data logges.",
             )
         )
+        self.about_page = self._build_about_page()
+        self.pages.addWidget(self.about_page)
         layout.addWidget(self.pages)
         return container
+
+    def _build_about_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(14)
+
+        title = QLabel("Om eMolPat")
+        title.setObjectName("pageTitle")
+        description = QLabel(
+            "eMolPat er en samlet portal for molekylærpatologiske "
+            "analyseverktøy. Portalen gir enkel tilgang til HemaFrag "
+            "Diagnostics, IGH Merge, VPM / HTS Tolkning og MPN Tolkning, "
+            "samtidig som hvert program fortsetter å kjøre som et "
+            "selvstendig verktøy."
+        )
+        description.setObjectName("pageIntro")
+        description.setWordWrap(True)
+        creator = QLabel("Utviklet av Christian Bjørnstad")
+        creator.setObjectName("aboutCreator")
+
+        layout.addWidget(title)
+        layout.addWidget(description)
+        layout.addWidget(creator)
+        layout.addStretch(1)
+        return page
 
     def _build_applications_page(self) -> QWidget:
         page = QWidget()
@@ -185,13 +226,24 @@ class MainWindow(QMainWindow):
         title.setObjectName("pageTitle")
         intro = QLabel("Velg analyseprogrammet du vil åpne.")
         intro.setObjectName("pageIntro")
-        layout.addWidget(title)
-        layout.addWidget(intro)
 
         ready = self.health.state is SuiteState.READY
         status_title, status_detail = STATE_TEXT[self.health.state.value]
         self.status_banner = StatusBanner(status_title, status_detail, ready)
-        layout.addWidget(self.status_banner)
+
+        heading_copy = QVBoxLayout()
+        heading_copy.setSpacing(6)
+        heading_copy.addWidget(title)
+        heading_copy.addWidget(intro)
+
+        heading = QHBoxLayout()
+        heading.setSpacing(20)
+        heading.addLayout(heading_copy, 1)
+        heading.addWidget(
+            self.status_banner,
+            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
+        )
+        layout.addLayout(heading)
 
         cards = QWidget()
         cards.setObjectName("cardsContainer")
