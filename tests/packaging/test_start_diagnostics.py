@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import runpy
 import sys
 from pathlib import Path
@@ -13,6 +14,7 @@ clear_emolpat_modules = NAMESPACE["clear_emolpat_modules"]
 diagnostic_lines = NAMESPACE["diagnostic_lines"]
 main = NAMESPACE["main"]
 redact = NAMESPACE["redact"]
+activate_user_site = NAMESPACE["activate_user_site"]
 
 
 def test_redact_hides_user_identity_but_keeps_useful_location_tokens(
@@ -74,6 +76,22 @@ def test_clear_emolpat_modules_removes_only_emolpat(monkeypatch) -> None:
     assert sys.modules["unrelated"] is unrelated
 
 
+def test_activate_user_site_places_installed_packages_first(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    user_site = tmp_path / "site-packages"
+    monkeypatch.setattr(NAMESPACE["site"], "getusersitepackages", lambda: str(user_site))
+    monkeypatch.setattr(sys, "path", ["existing", str(user_site)])
+
+    result = activate_user_site()
+
+    assert result == user_site
+    assert user_site.is_dir()
+    assert sys.path[0] == str(user_site)
+    assert sys.path.count(str(user_site)) == 1
+
+
 def test_main_prints_and_logs_startup_failure(monkeypatch, tmp_path, capsys) -> None:
     local = tmp_path / "local"
     monkeypatch.setenv("LOCALAPPDATA", str(local))
@@ -93,3 +111,6 @@ def test_main_prints_and_logs_startup_failure(monkeypatch, tmp_path, capsys) -> 
     log = local / "eMolPat" / "logs" / "startup-diagnostic.log"
     assert "RuntimeError: Qt plugin unavailable" in output
     assert "RuntimeError: Qt plugin unavailable" in log.read_text(encoding="utf-8")
+    assert os.environ["EMOLPAT_RELEASE_ROOT"] == str(
+        Path(NAMESPACE["__file__"]).resolve().parent
+    )

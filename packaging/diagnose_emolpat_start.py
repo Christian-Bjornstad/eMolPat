@@ -78,6 +78,17 @@ def clear_emolpat_modules() -> tuple[str, ...]:
     return names
 
 
+def activate_user_site() -> Path:
+    """Expose the same per-user installation boundary as the normal starter."""
+    user_site = Path(site.getusersitepackages())
+    user_site.mkdir(parents=True, exist_ok=True)
+    value = str(user_site)
+    while value in sys.path:
+        sys.path.remove(value)
+    sys.path.insert(0, value)
+    return user_site
+
+
 def _diagnostic_log() -> Path:
     base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
     return base / "eMolPat" / "logs" / "startup-diagnostic.log"
@@ -92,6 +103,8 @@ def _write_diagnostic(lines: tuple[str, ...]) -> Path:
 
 def main() -> int:
     """Start eMolPat and keep Python FELLES alive if startup fails."""
+    os.environ["EMOLPAT_RELEASE_ROOT"] = str(Path(__file__).resolve().parent)
+    activate_user_site()
     if os.environ.pop("EMOLPAT_DIAGNOSTIC_CLEAN_IMPORT", "") == "1":
         clear_emolpat_modules()
     try:
