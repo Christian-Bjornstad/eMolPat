@@ -18,6 +18,7 @@ pandas-flavor==0.8.1
 panel==1.9.3
 param==2.4.1
 pillow==12.3.0
+pip==26.0.1
 plotly==6.9.0
 PyQt6==6.11.0
 pyqtgraph==0.14.0
