@@ -1,0 +1,173 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+
+from emolpat.domain import InstalledModule, InstallRecord
+from emolpat.health import read_install_record
+from emolpat.install import (
+    build_pip_commands,
+    install_release,
+    replace_install_record,
+    run_command,
+)
+from emolpat.paths import UserPaths
+
+
+def paths_at(root: Path) -> UserPaths:
+    return UserPaths(
+        root=root,
+        logs=root / "logs",
+        install_record=root / "install-record.json",
+        rollback=root / "rollback",
+    )
+
+
+def create_release(root: Path, version: str = "1.1.0") -> Path:
+    root.mkdir(parents=True)
+    (root / "packages").mkdir()
+    (root / "wheelhouse").mkdir()
+    lock = b"emolpat==1.1.0 --hash=sha256:" + b"a" * 64
+    (root / "requirements.lock").write_bytes(lock)
+    portal = root / "packages" / "emolpat-1.1.0-py3-none-any.whl"
+    portal.write_bytes(b"wheel")
+    document = json.loads(Path("tests/fixtures/valid-manifest.json").read_text())
+    document["suite_version"] = version
+    document["files"] = [
+        {
+            "path": "requirements.lock",
+            "sha256": hashlib.sha256(lock).hexdigest(),
+        },
+        {
+            "path": "packages/emolpat-1.1.0-py3-none-any.whl",
+            "sha256": hashlib.sha256(b"wheel").hexdigest(),
+        },
+    ]
+    (root / "manifest.json").write_text(json.dumps(document), encoding="utf-8")
+    return root
+
+
+def old_record() -> InstallRecord:
+    return InstallRecord(
+        suite_version="1.0.0",
+        manifest_sha256="b" * 64,
+        verified_at="2026-08-12T10:00:00+00:00",
+        modules=(InstalledModule("old-suite", "1.0.0", "old_suite"),),
+    )
+
+
+class RecordingRunner:
+    def __init__(self, codes: list[int] | None = None, verified: bool = True) -> None:
+        self.codes = iter(codes or [0, 0])
+        self.commands = []
+        self.verified = verified
+
+    def __call__(self, command) -> int:
+        self.commands.append(command)
+        return next(self.codes)
+
+    def verify(self, _manifest) -> bool:
+        return self.verified
+
+
+def test_dependency_command_is_offline_and_per_user(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+
+    command = build_pip_commands(release)[0].argv
+
+    assert "--user" in command
+    assert "--no-index" in command
+    assert "--require-hashes" in command
+    assert "--find-links" in command
+    assert str(release / "wheelhouse") in command
+
+
+def test_component_command_installs_only_approved_local_wheels(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+
+    command = build_pip_commands(release)[1]
+
+    assert command.stage == "components"
+    assert "--no-index" in command.argv
+    assert str(release / "packages" / "emolpat-1.1.0-py3-none-any.whl") in command.argv
+
+
+def test_successful_install_writes_verified_record_atomically(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+    paths = paths_at(tmp_path / "user")
+    runner = RecordingRunner()
+
+    result = install_release(release, runner, paths)
+
+    assert result.ok
+    assert result.stage == "record"
+    record = read_install_record(paths.install_record)
+    assert record is not None
+    assert record.suite_version == "1.1.0"
+    assert len(record.modules) == 4
+    assert not paths.install_record.with_suffix(".json.tmp").exists()
+    assert (paths.rollback / "1.1.0" / "manifest.json").is_file()
+
+
+def test_failed_update_does_not_write_new_install_record(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+    paths = paths_at(tmp_path / "user")
+    replace_install_record(paths.install_record, old_record())
+    runner = RecordingRunner(codes=[0, 9])
+
+    result = install_release(release, runner, paths)
+
+    assert not result.ok
+    assert result.stage == "components"
+    assert read_install_record(paths.install_record) == old_record()
+
+
+def test_failed_verification_keeps_previous_record(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+    paths = paths_at(tmp_path / "user")
+    replace_install_record(paths.install_record, old_record())
+    runner = RecordingRunner(verified=False)
+
+    result = install_release(release, runner, paths)
+
+    assert not result.ok
+    assert result.stage == "verification"
+    assert read_install_record(paths.install_record) == old_record()
+
+
+def test_failed_update_restores_retained_previous_release(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+    paths = paths_at(tmp_path / "user")
+    replace_install_record(paths.install_record, old_record())
+    create_release(paths.rollback / "1.0.0", version="1.0.0")
+    runner = RecordingRunner(codes=[0, 9, 0, 0])
+
+    result = install_release(release, runner, paths)
+
+    assert not result.ok
+    assert result.rolled_back
+    assert [command.stage for command in runner.commands] == [
+        "dependencies",
+        "components",
+        "dependencies",
+        "components",
+    ]
+    assert read_install_record(paths.install_record) == old_record()
+
+
+def test_subprocess_denial_falls_back_to_in_process_pip(monkeypatch) -> None:
+    calls = []
+
+    def denied(*_args, **_kwargs):
+        raise PermissionError("blocked by Ivanti")
+
+    monkeypatch.setattr("emolpat.install.subprocess.run", denied)
+    monkeypatch.setattr(
+        "emolpat.install.run_pip_in_process",
+        lambda arguments: calls.append(arguments) or 0,
+    )
+    command = type("CommandLike", (), {"argv": ("python", "-m", "pip", "install", "x")})()
+
+    assert run_command(command) == 0
+    assert calls == [("install", "x")]

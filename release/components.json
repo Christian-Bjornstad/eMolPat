@@ -1,0 +1,38 @@
+[
+  {
+    "id": "hemafrag",
+    "repository": "https://github.com/Christian-Bjornstad/HemaFrag-Diagnostics.git",
+    "commit": "1bbce920b5841e8083886f3ce41a6c446142fd3d",
+    "distribution": "hemafrag-diagnostics",
+    "import_name": "hemafrag_diagnostics",
+    "entry_point": "hemafrag_diagnostics.__main__:main",
+    "test_command": ["python", "-m", "pytest", "-q"]
+  },
+  {
+    "id": "igh-merge",
+    "repository": "https://github.com/Christian-Bjornstad/IGH.git",
+    "commit": "e54f598c0666ad3453df6dee06d55eb2e5f8fe1f",
+    "distribution": "igh-merge",
+    "import_name": "igh_merge",
+    "entry_point": "igh_merge.__main__:main",
+    "test_command": ["python", "-m", "pytest", "-q"]
+  },
+  {
+    "id": "vpm-tolkning",
+    "repository": "https://github.com/Christian-Bjornstad/Archer-prosess.git",
+    "commit": "8bc69e7674f404067c78c15d9683529b297026b3",
+    "distribution": "archer-prosess",
+    "import_name": "archer_processor",
+    "entry_point": "archer_processor.__main__:main",
+    "test_command": ["python", "-m", "pytest", "-q"]
+  },
+  {
+    "id": "mpn-tolkning",
+    "repository": "https://github.com/Christian-Bjornstad/MPN-Tolkning.git",
+    "commit": "a8c6e758f50d83eeb59e54917d64c61cf046229b",
+    "distribution": "mpn-tolkning",
+    "import_name": "mpn_tolkning",
+    "entry_point": "mpn_tolkning.__main__:main",
+    "test_command": ["python", "-m", "pytest", "-q"]
+  }
+]
