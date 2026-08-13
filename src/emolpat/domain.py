@@ -61,3 +61,19 @@ class SuiteManifest:
                 return module
         raise KeyError(f"unknown module id: {module_id}")
 
+
+@dataclass(frozen=True)
+class VerificationIssue:
+    """One deterministic integrity failure in an approved release."""
+
+    code: str
+    path: str
+    message: str
+
+
+@dataclass(frozen=True)
+class VerificationReport:
+    """Complete release verification result."""
+
+    ok: bool
+    issues: tuple[VerificationIssue, ...]
