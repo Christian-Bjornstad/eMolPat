@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import zipfile
 from pathlib import Path
+
+import pytest
 
 from emolpat.integrity import verify_release
 from emolpat.manifest import load_manifest
-from scripts.build_suite import assemble_release
+from scripts.build_suite import _validate_dependency_matrix, assemble_release
 
 
 def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
@@ -60,3 +63,21 @@ def test_two_assemblies_have_identical_manifests(tmp_path: Path) -> None:
     assert first_manifest["files"] == sorted(
         first_manifest["files"], key=lambda item: item["path"]
     )
+
+
+def test_build_rejects_dependency_version_outside_component_contract(
+    tmp_path: Path,
+) -> None:
+    package = tmp_path / "clinical_app-1.0.0-py3-none-any.whl"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr(
+            "clinical_app-1.0.0.dist-info/METADATA",
+            "Metadata-Version: 2.1\nName: clinical-app\nVersion: 1.0.0\n"
+            "Requires-Dist: pandas<3\n",
+        )
+    dependency = tmp_path / "pandas-3.0.1-py3-none-any.whl"
+    with zipfile.ZipFile(dependency, "w") as archive:
+        archive.writestr("pandas-3.0.1.dist-info/METADATA", "Metadata-Version: 2.1\n")
+
+    with pytest.raises(RuntimeError, match="unsatisfied dependency"):
+        _validate_dependency_matrix([package], [dependency])

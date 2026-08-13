@@ -10,11 +10,15 @@ import sys
 import tempfile
 import zipfile
 from dataclasses import asdict, replace
+from email.parser import Parser
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name, parse_wheel_filename
 
 from emolpat.components import load_components
 from emolpat.domain import FileDigest
@@ -182,6 +186,39 @@ def _download_dependencies(destination: Path) -> None:
     )
 
 
+def _validate_dependency_matrix(
+    package_wheels: list[Path],
+    dependency_wheels: list[Path],
+) -> None:
+    """Prove every active wheel requirement is present at an allowed version."""
+    versions = {}
+    for wheel in (*package_wheels, *dependency_wheels):
+        name, version, _build, _tags = parse_wheel_filename(wheel.name)
+        normalized = canonicalize_name(name)
+        previous = versions.get(normalized)
+        if previous is not None and previous != version:
+            raise RuntimeError(f"conflicting wheel versions for {normalized}")
+        versions[normalized] = version
+
+    for wheel in package_wheels:
+        with zipfile.ZipFile(wheel) as archive:
+            metadata_name = next(
+                name for name in archive.namelist() if name.endswith(".dist-info/METADATA")
+            )
+            metadata = Parser().parsestr(
+                archive.read(metadata_name).decode("utf-8", errors="strict")
+            )
+        for value in metadata.get_all("Requires-Dist", []):
+            requirement = Requirement(value)
+            if requirement.marker and not requirement.marker.evaluate({"extra": ""}):
+                continue
+            actual = versions.get(canonicalize_name(requirement.name))
+            if actual is None or actual not in requirement.specifier:
+                raise RuntimeError(
+                    f"unsatisfied dependency for {wheel.name}: {requirement}"
+                )
+
+
 def build_suite(version: str, output: Path, component_root: Path) -> Path:
     """Build five package wheels, collect Windows dependencies, and assemble."""
     component_sources = assert_clean_pinned_checkouts(component_root.resolve())
@@ -197,6 +234,10 @@ def build_suite(version: str, output: Path, component_root: Path) -> Path:
         if len(list(package_dir.glob("*.whl"))) != 5:
             raise RuntimeError("suite build must produce exactly five package wheels")
         _download_dependencies(dependency_dir)
+        _validate_dependency_matrix(
+            list(package_dir.glob("*.whl")),
+            list(dependency_dir.glob("*.whl")),
+        )
         for wheel in (*package_dir.glob("*.whl"), *dependency_dir.glob("*.whl")):
             _normalize_wheel(wheel)
         return assemble_release(
