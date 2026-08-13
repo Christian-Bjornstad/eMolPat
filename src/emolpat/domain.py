@@ -118,3 +118,21 @@ class ComponentSpec:
     import_name: str
     entry_point: str
     test_command: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class Command:
+    """One non-interactive installer command and its user-facing stage."""
+
+    stage: str
+    argv: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class InstallResult:
+    """Outcome of a complete suite installation transaction."""
+
+    ok: bool
+    stage: str
+    return_code: int | None = None
+    rolled_back: bool = False

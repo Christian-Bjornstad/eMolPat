@@ -8,8 +8,8 @@
 - [x] Task 5: Implement the application handoff coordinator
 - [x] Task 6: Build the approved PyQt6 portal
 - [x] Task 7: Add redacted logging and startup failure recovery
-- [ ] Task 8: Implement offline install, repair, and rollback
-- [ ] Checkpoint B: Working local suite
+- [x] Task 8: Implement offline install, repair, and rollback
+- [x] Checkpoint B: Working local suite
 - [ ] Task 9: Build reproducible atomic suite artifacts
 - [ ] Task 10: Add Python FELLES and Ivanti launchers
 - [ ] Task 11: Complete end-to-end validation and documentation

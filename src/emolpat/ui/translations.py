@@ -22,3 +22,12 @@ STATE_TEXT = {
         "Kontroller Python FELLES og tilgangen til den godkjente pakken.",
     ),
 }
+
+INSTALL_STAGE_TEXT = {
+    "preflight": "Kontrollerer godkjent eMolPat-pakke",
+    "dependencies": "Installerer godkjente avhengigheter",
+    "components": "Installerer portal og analyseprogrammer",
+    "verification": "Kontrollerer hele installasjonen",
+    "record": "Fullfører eMolPat-installasjonen",
+    "rollback": "Gjenoppretter forrige godkjente versjon",
+}

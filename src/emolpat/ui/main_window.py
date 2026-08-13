@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
 )
 
 from emolpat.domain import HealthReport, SuiteManifest, SuiteState
-from emolpat.ui.translations import NAVIGATION, STATE_TEXT
+from emolpat.ui.translations import INSTALL_STAGE_TEXT, NAVIGATION, STATE_TEXT
 from emolpat.ui.widgets import ApplicationCard, StatusBanner, placeholder_page
 
 STYLESHEET = """
@@ -44,6 +44,9 @@ QLabel#statusDetail { color: #4b686a; }
 QFrame#applicationCard { background: white; border: 1px solid #d6e0e1;
   border-radius: 9px; }
 QFrame#applicationCard:hover { border-color: #87aaa9; }
+QLabel#installProgress { background: #e8f2f3; color: #17393b;
+  border: 1px solid #9ebfc0; border-radius: 6px; padding: 10px 14px;
+  font-weight: 600; }
 QLabel#moduleName { color: #12383b; font-size: 17px; font-weight: 700; }
 QLabel#moduleVersion { color: #6b8183; font-size: 12px; }
 QLabel#moduleDescription { color: #4b6264; font-size: 13px; }
@@ -84,6 +87,11 @@ class MainWindow(QMainWindow):
             if card.module_id == module_id:
                 return card
         raise KeyError(f"unknown module card: {module_id}")
+
+    def show_install_stage(self, stage: str) -> None:
+        """Expose plain-language progress for a suite-level install operation."""
+        self.install_progress.setText(INSTALL_STAGE_TEXT[stage])
+        self.install_progress.show()
 
     def _build_ui(self) -> None:
         shell = QWidget()
@@ -138,6 +146,12 @@ class MainWindow(QMainWindow):
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(34, 28, 34, 28)
+        layout.setSpacing(12)
+        self.install_progress = QLabel()
+        self.install_progress.setObjectName("installProgress")
+        self.install_progress.setAccessibleName("Installasjonsstatus")
+        self.install_progress.hide()
+        layout.addWidget(self.install_progress)
         self.pages = QStackedWidget()
         self.pages.addWidget(self._build_applications_page())
         self.pages.addWidget(
