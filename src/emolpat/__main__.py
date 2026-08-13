@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 from importlib.resources import as_file, files
 
-from emolpat.domain import HealthReport, SuiteManifest, SuiteState
+from emolpat.domain import HealthReport, SuiteManifest
+from emolpat.health_probe import probe_health
 from emolpat.logging_config import configure_logging
 from emolpat.manifest import load_manifest
 from emolpat.paths import UserPaths
@@ -32,13 +33,10 @@ class InstalledPortal:
 
 def main() -> int:
     """Show the portal and hand control to the selected standalone app."""
-    configure_logging(UserPaths.from_environment(os.environ))
+    paths = UserPaths.from_environment(os.environ)
+    configure_logging(paths)
     manifest = bundled_manifest()
-    health = HealthReport(
-        state=SuiteState.READY,
-        suite_version=manifest.suite_version,
-        issues=(),
-    )
+    health = probe_health(manifest, paths)
     return run_application_loop(InstalledPortal(manifest, health))
 
 

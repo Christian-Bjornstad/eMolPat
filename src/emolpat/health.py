@@ -77,7 +77,7 @@ def evaluate_health(
     """Derive suite health from non-clinical package and import observations."""
     if record is None:
         return HealthReport(
-            state=SuiteState.UNAVAILABLE,
+            state=SuiteState.NOT_INSTALLED,
             suite_version=None,
             issues=("suite is not installed for this Windows user",),
         )

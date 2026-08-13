@@ -9,6 +9,10 @@ NAVIGATION = (
 
 STATE_TEXT = {
     "ready": ("Klar til bruk", "Alle fire programmer er kontrollert."),
+    "not_installed": (
+        "Programmer må installeres",
+        "Installer den komplette eMolPat-pakken før programmene åpnes.",
+    ),
     "update_available": (
         "Oppdatering tilgjengelig",
         "En nyere godkjent eMolPat-pakke er tilgjengelig.",

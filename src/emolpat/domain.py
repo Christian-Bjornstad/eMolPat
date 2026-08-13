@@ -17,6 +17,7 @@ class SuiteState(StrEnum):
     """User-facing health states for the complete installed suite."""
 
     READY = "ready"
+    NOT_INSTALLED = "not_installed"
     UPDATE_AVAILABLE = "update_available"
     REPAIR_REQUIRED = "repair_required"
     UNAVAILABLE = "unavailable"
