@@ -76,6 +76,21 @@ def assemble_release(
     packages = _copy_files(package_wheels, root / "packages")
     dependencies = _copy_files(dependency_wheels, root / "wheelhouse")
 
+    launchers = []
+    packaging_root = PROJECT_ROOT / "packaging"
+    if packaging_root.is_dir():
+        for filename in (
+            "install_emolpat.py",
+            "start_emolpat.py",
+            "Installer eMolPat.cmd",
+            "Start eMolPat.cmd",
+        ):
+            source = packaging_root / filename
+            if source.is_file():
+                target = root / filename
+                shutil.copy2(source, target)
+                launchers.append(target)
+
     lock_lines = sorted(_locked_requirement(path) for path in dependencies)
     lock = root / "requirements.lock"
     lock.write_text("\n".join(lock_lines) + "\n", encoding="utf-8", newline="\n")
@@ -83,7 +98,7 @@ def assemble_release(
     template = load_manifest(
         PROJECT_ROOT / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json"
     )
-    declared_paths = [lock, *packages, *dependencies]
+    declared_paths = [lock, *packages, *dependencies, *launchers]
     digests = tuple(
         FileDigest(
             path=path.relative_to(root).as_posix(),
