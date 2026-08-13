@@ -71,18 +71,34 @@ def test_diagnostic_lines_show_runtime_and_full_redacted_exception(
     assert "Christian" not in output
 
 
-def test_clear_emolpat_modules_removes_only_emolpat(monkeypatch) -> None:
-    monkeypatch.setitem(sys.modules, "emolpat", ModuleType("emolpat"))
-    monkeypatch.setitem(sys.modules, "emolpat.ui", ModuleType("emolpat.ui"))
+def test_clear_emolpat_modules_removes_only_emolpat() -> None:
+    original = {
+        name: module
+        for name, module in sys.modules.items()
+        if name == "emolpat" or name.startswith("emolpat.")
+    }
+    sys.modules["emolpat"] = ModuleType("emolpat")
+    sys.modules["emolpat.ui"] = ModuleType("emolpat.ui")
     unrelated = ModuleType("unrelated")
-    monkeypatch.setitem(sys.modules, "unrelated", unrelated)
+    previous_unrelated = sys.modules.get("unrelated")
+    sys.modules["unrelated"] = unrelated
 
-    removed = clear_emolpat_modules()
+    try:
+        removed = clear_emolpat_modules()
 
-    assert removed == ("emolpat", "emolpat.ui")
-    assert "emolpat" not in sys.modules
-    assert "emolpat.ui" not in sys.modules
-    assert sys.modules["unrelated"] is unrelated
+        assert "emolpat" in removed
+        assert "emolpat.ui" in removed
+        assert all(name == "emolpat" or name.startswith("emolpat.") for name in removed)
+        assert not any(
+            name == "emolpat" or name.startswith("emolpat.") for name in sys.modules
+        )
+        assert sys.modules["unrelated"] is unrelated
+    finally:
+        sys.modules.update(original)
+        if previous_unrelated is None:
+            sys.modules.pop("unrelated", None)
+        else:
+            sys.modules["unrelated"] = previous_unrelated
 
 
 def test_activate_user_site_places_installed_packages_first(
