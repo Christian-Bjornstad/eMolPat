@@ -22,5 +22,8 @@ def test_cmd_uses_ivanti_and_copies_complete_python_command(
     assert "15694" in text
     assert "Set-Clipboard" in text
     assert python_script in text
-    assert "exec(open(r" in text
+    assert "runpy.run_path" in text
+    assert "run_name=''emolpat_felles''" in text
+    assert "[''main'']()" in text
+    assert "exec(open(r" not in text
     assert "pause" in text.lower()
