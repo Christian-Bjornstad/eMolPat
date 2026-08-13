@@ -113,6 +113,14 @@ The initial deployment model targets Sykehuspartner-managed Windows computers us
 
 Installation is offline, uses `pip --user`, and writes the verified suite record only after all packages and imports pass. See the [Python FELLES guide](docs/operations/python-felles.md) for the complete operator workflow and the [repair guide](docs/operations/repair.md) for controlled recovery.
 
+### Temporary Python FELLES diagnostic package
+
+The test branch `codex/python-felles-diagnostics` builds
+`eMolPat-1.0.2-startup-diagnostics.zip`. Copy its three files into the existing
+extracted eMolPat 1.0.2 folder. Run **Start eMolPat - Diagnose.cmd** first and
+copy the text that remains visible in Python FELLES if startup fails. Then try
+**Start eMolPat - Clean import.cmd** as a separate, safe import-cache test.
+
 ## Health and recovery
 
 | State | Meaning |
