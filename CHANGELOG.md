@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed Python FELLES prompt commands so installation and startup no longer close the interpreter.
 - Added self-contained Windows release ZIPs with all four applications and exact offline dependencies.
 - Replaced unconditional readiness with verified per-user package and import health.
 - Added offline install and repair actions plus tag-based GitHub Release publication.

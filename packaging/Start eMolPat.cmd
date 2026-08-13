@@ -7,7 +7,7 @@ if not exist "%IVANTI%" (
   pause
   exit /b 1
 )
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$p=(Resolve-Path -LiteralPath '%~dp0start_emolpat.py').Path; Set-Clipboard -Value ('exec(open(r''' + $p + ''', encoding=''utf-8'').read())')"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$p=(Resolve-Path -LiteralPath '%~dp0start_emolpat.py').Path; Set-Clipboard -Value ('import runpy; runpy.run_path(r''' + $p + ''', run_name=''emolpat_felles'')[''main'']()')"
 if errorlevel 1 (
   echo Startkommandoen kunne ikke kopieres.
   pause
