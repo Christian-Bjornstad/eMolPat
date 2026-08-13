@@ -32,7 +32,7 @@
 eMolPat packages four existing molecular-pathology applications as one locally installed Windows suite. Laboratory staff open a single Norwegian portal, choose the required application, and continue in that application's established standalone workflow. The portal closes completely before the selected application starts, avoiding competing Qt event loops and preserving each tool's validation boundary.
 
 <p align="center">
-  <img src="docs/assets/portal-overview.png" width="920" alt="eMolPat portal showing the four available molecular pathology applications">
+  <img src="docs/assets/portal-overview-v2.png" width="920" alt="Updated eMolPat portal showing the four available molecular pathology applications">
 </p>
 
 | Area | Current implementation |
