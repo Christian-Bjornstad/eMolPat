@@ -116,10 +116,13 @@ Installation is offline, uses `pip --user`, and writes the verified suite record
 ### Temporary Python FELLES diagnostic package
 
 The test branch `codex/python-felles-diagnostics` builds
-`eMolPat-1.0.2-startup-diagnostics.zip`. Copy its three files into the existing
-extracted eMolPat 1.0.2 folder. Run **Start eMolPat - Diagnose.cmd** first and
-copy the text that remains visible in Python FELLES if startup fails. Then try
-**Start eMolPat - Clean import.cmd** as a separate, safe import-cache test.
+`eMolPat-1.0.2-startup-diagnostics.zip`. Copy its five files into the existing
+extracted eMolPat 1.0.2 folder. Run
+**Installer eMolPat - Manuell FELLES.cmd**, open Python FELLES through the
+workstation's normal method, and paste the copied command. After installation,
+use **Start eMolPat - Manuell FELLES.cmd** the same way. If startup still fails,
+run **Start eMolPat - Diagnose.cmd**, or try **Start eMolPat - Clean import.cmd**
+as a separate, safe import-cache test. None of these launchers uses Ivanti.
 
 ## Health and recovery
 

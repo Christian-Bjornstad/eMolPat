@@ -10,8 +10,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE_NAME = "eMolPat-1.0.2-startup-diagnostics.zip"
 TOP_LEVEL = "eMolPat-1.0.2-startup-diagnostics"
 PAYLOAD = (
+    "Installer eMolPat - Manuell FELLES.cmd",
     "Start eMolPat - Clean import.cmd",
     "Start eMolPat - Diagnose.cmd",
+    "Start eMolPat - Manuell FELLES.cmd",
     "diagnose_emolpat_start.py",
 )
 
