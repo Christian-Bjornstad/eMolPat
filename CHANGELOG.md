@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added self-contained Windows release ZIPs with all four applications and exact offline dependencies.
+- Replaced unconditional readiness with verified per-user package and import health.
+- Added offline install and repair actions plus tag-based GitHub Release publication.
 - Added the Norwegian eMolPat portal with canonical icons for all four applications.
 - Added same-process standalone application handoff after the portal fully closes.
 - Added atomic offline per-user installation, verification, repair, and retained-version rollback.

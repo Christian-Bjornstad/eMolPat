@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def activate_user_site() -> Path:
-    if not ((3, 12) <= sys.version_info[:2] < (3, 15)):
+    if sys.version_info[:2] != (3, 12):
         raise RuntimeError(
             f"Python FELLES-versjon støttes ikke: {sys.version.split()[0]}"
         )
@@ -32,6 +32,7 @@ def _record_startup_failure(error: BaseException) -> None:
 
 def main() -> int:
     try:
+        os.environ["EMOLPAT_RELEASE_ROOT"] = str(Path(__file__).resolve().parent)
         activate_user_site()
         from emolpat.__main__ import main
 

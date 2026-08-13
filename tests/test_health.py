@@ -105,10 +105,10 @@ def test_valid_installed_suite_remains_ready_when_shared_release_is_unavailable(
     assert report.state is SuiteState.READY
 
 
-def test_health_is_unavailable_without_an_install_record() -> None:
+def test_health_is_not_installed_without_an_install_record() -> None:
     report = evaluate_health(manifest(), None, {}, {})
 
-    assert report.state is SuiteState.UNAVAILABLE
+    assert report.state is SuiteState.NOT_INSTALLED
     assert report.issues == ("suite is not installed for this Windows user",)
 
 

@@ -59,6 +59,7 @@ def test_verify_release_reports_changed_and_missing_files_in_path_order(
     changed = tmp_path / "packages" / "changed.whl"
     changed.write_bytes(b"changed")
     manifest = manifest_for(
+        FileDigest("requirements.lock", digest(b"locked")),
         FileDigest("packages/missing.whl", digest(b"missing")),
         FileDigest("packages/changed.whl", digest(b"original")),
     )
@@ -69,6 +70,19 @@ def test_verify_release_reports_changed_and_missing_files_in_path_order(
     assert [(issue.path, issue.code) for issue in report.issues] == [
         ("packages/changed.whl", "checksum_mismatch"),
         ("packages/missing.whl", "missing_file"),
+    ]
+
+
+def test_verify_release_rejects_undeclared_files(tmp_path: Path) -> None:
+    create_release_root(tmp_path)
+    (tmp_path / "packages" / "unexpected.whl").write_bytes(b"unexpected")
+    manifest = manifest_for(FileDigest("requirements.lock", digest(b"locked")))
+
+    report = verify_release(tmp_path, manifest)
+
+    assert not report.ok
+    assert [(issue.path, issue.code) for issue in report.issues] == [
+        ("packages/unexpected.whl", "unexpected_file")
     ]
 
 

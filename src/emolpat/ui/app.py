@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from importlib.resources import files
 from typing import Protocol
@@ -13,8 +14,10 @@ from PyQt6.QtCore import QCoreApplication, QEvent
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
-from emolpat.domain import HealthReport, SuiteManifest
+from emolpat.domain import HealthReport, InstallResult, SuiteManifest
 from emolpat.launch import EntryPointResolver, resolve_entry_point, run_handoff
+from emolpat.paths import UserPaths
+from emolpat.ui.install_coordinator import InstallCoordinator
 from emolpat.ui.main_window import MainWindow
 
 
@@ -37,6 +40,9 @@ def run_portal(
     manifest: SuiteManifest,
     health: HealthReport,
     startup_error: str | None = None,
+    release_root=None,
+    paths: UserPaths | None = None,
+    health_loader: Callable[[], HealthReport] | None = None,
 ) -> PortalOutcome:
     """Run and fully release the portal before returning a selection."""
     app = QApplication.instance()
@@ -50,7 +56,24 @@ def run_portal(
     )
 
     selected: list[str] = []
-    window = MainWindow(manifest, health)
+    window = MainWindow(manifest, health, release_available=release_root is not None)
+    coordinator = None
+    if release_root is not None and paths is not None and health_loader is not None:
+        coordinator = InstallCoordinator(release_root, paths, health_loader)
+        coordinator.stage_changed.connect(window.show_install_stage)
+        coordinator.finished.connect(window.finish_install)
+        window.install_requested.connect(coordinator.start)
+
+        def log_install_failure(result: InstallResult, _health: HealthReport) -> None:
+            if not result.ok:
+                logging.getLogger("emolpat").error(
+                    "install_failed stage=%s return_code=%s rolled_back=%s",
+                    result.stage,
+                    result.return_code,
+                    str(result.rolled_back).lower(),
+                )
+
+        coordinator.finished.connect(log_install_failure)
     window.module_selected.connect(selected.append)
     window.module_selected.connect(lambda _module_id: app.quit())
     window.show()

@@ -39,6 +39,30 @@ def test_installer_bootstraps_emolpat_from_local_release_only() -> None:
     assert "http://" not in text and "https://" not in text
 
 
+def test_bootstrap_scripts_use_their_extracted_release_directory() -> None:
+    installer = (PACKAGING / "install_emolpat.py").read_text(encoding="utf-8")
+    starter = (PACKAGING / "start_emolpat.py").read_text(encoding="utf-8")
+
+    assert "Path(__file__).resolve().parent" in installer
+    assert "DEFAULT_RELEASE_ROOT" not in installer
+    assert 'os.environ["EMOLPAT_RELEASE_ROOT"]' in installer
+    assert 'os.environ["EMOLPAT_RELEASE_ROOT"]' in starter
+
+
+@pytest.mark.parametrize("name", ["install_emolpat.py", "start_emolpat.py"])
+@pytest.mark.parametrize("version", [(3, 11), (3, 13)])
+def test_bootstrap_rejects_non_312_python(
+    monkeypatch,
+    name: str,
+    version: tuple[int, int],
+) -> None:
+    namespace = runpy.run_path(str(PACKAGING / name), run_name="launcher_test")
+    monkeypatch.setattr(sys, "version_info", version)
+
+    with pytest.raises(RuntimeError, match="støttes ikke"):
+        namespace["activate_user_site"]()
+
+
 def test_start_script_invokes_installed_suite_entrypoint() -> None:
     text = (PACKAGING / "start_emolpat.py").read_text(encoding="utf-8")
 

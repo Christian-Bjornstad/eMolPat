@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QTimer
 
-from emolpat.domain import HealthReport, SuiteManifest
+from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
+from emolpat.paths import UserPaths
 from emolpat.ui.app import PortalOutcome, run_application_loop, run_portal
 from emolpat.ui.main_window import MainWindow
 
@@ -88,3 +89,61 @@ def test_successful_entrypoint_owns_process_until_it_returns(
     assert portal.show_count == 1
     assert events == ["ran"]
     assert code == 7
+
+
+class SignalStub:
+    def __init__(self) -> None:
+        self.callbacks = []
+
+    def connect(self, callback) -> None:
+        self.callbacks.append(callback)
+
+
+def test_run_portal_wires_install_action_to_coordinator(
+    monkeypatch,
+    qapp,
+    tmp_path,
+    manifest: SuiteManifest,
+) -> None:
+    started = []
+
+    class FakeCoordinator:
+        def __init__(self, *_args, **_kwargs) -> None:
+            self.stage_changed = SignalStub()
+            self.finished = SignalStub()
+
+        def start(self) -> bool:
+            started.append(True)
+            for callback in self.finished.callbacks:
+                callback(
+                    InstallResult(ok=True, stage="record"),
+                    HealthReport(SuiteState.READY, "1.0.0", ()),
+                )
+            return True
+
+    monkeypatch.setattr("emolpat.ui.app.InstallCoordinator", FakeCoordinator)
+    paths = UserPaths(
+        tmp_path,
+        tmp_path / "logs",
+        tmp_path / "record.json",
+        tmp_path / "rollback",
+    )
+
+    def install_then_close() -> None:
+        window = next(
+            widget for widget in qapp.topLevelWidgets() if isinstance(widget, MainWindow)
+        )
+        window.install_button.click()
+        window.close()
+
+    QTimer.singleShot(0, install_then_close)
+    outcome = run_portal(
+        manifest,
+        HealthReport(SuiteState.NOT_INSTALLED, None, ()),
+        release_root=tmp_path,
+        paths=paths,
+        health_loader=lambda: HealthReport(SuiteState.READY, "1.0.0", ()),
+    )
+
+    assert outcome == PortalOutcome()
+    assert started == [True]

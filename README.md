@@ -24,6 +24,12 @@
   <a href="#development-and-validation">Validation</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/Christian-Bjornstad/eMolPat/releases"><strong>Download eMolPat for Windows</strong></a>
+</p>
+
+Download the GitHub Release asset named `eMolPat-<version>-windows.zip`. Do **not** use **Code > Download ZIP**: that archive contains source code only and does not include the four applications or their offline dependencies.
+
 > [!IMPORTANT]
 > eMolPat is a launcher, release manager, and health boundary for controlled laboratory software. It does not perform molecular analysis itself. Patient files, clinical inputs, reports, credentials, and application settings remain owned by the individual analysis applications and are deliberately excluded from this repository.
 
@@ -98,11 +104,12 @@ The manifest covers every installation artifact. The installer rejects missing f
 
 The initial deployment model targets Sykehuspartner-managed Windows computers using Ivanti Workspace Control and **Python FELLES**.
 
-1. Copy one complete, verified eMolPat release to the approved shared location.
-2. Run **Installer eMolPat.cmd** from that release folder.
-3. Ivanti opens Python FELLES and the installer copies a local Python command to the clipboard.
-4. Paste with `Ctrl+V`, press Enter, and wait for complete suite verification.
-5. Use **Start eMolPat.cmd** for normal launches.
+1. Download `eMolPat-<version>-windows.zip` from [GitHub Releases](https://github.com/Christian-Bjornstad/eMolPat/releases).
+2. Extract the complete ZIP to a normal local folder; do not run files from inside the archive.
+3. Run **Installer eMolPat.cmd** from the extracted folder.
+4. Ivanti opens Python FELLES and the installer copies a local Python command to the clipboard.
+5. Paste with `Ctrl+V`, press Enter, and wait until all five packages are installed and verified.
+6. Run **Start eMolPat.cmd** from the same folder for normal launches.
 
 Installation is offline, uses `pip --user`, and writes the verified suite record only after all packages and imports pass. See the [Python FELLES guide](docs/operations/python-felles.md) for the complete operator workflow and the [repair guide](docs/operations/repair.md) for controlled recovery.
 
