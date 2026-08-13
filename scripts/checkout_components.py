@@ -10,8 +10,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT / "src"))
+for import_root in (PROJECT_ROOT, PROJECT_ROOT / "src"):
+    if str(import_root) not in sys.path:
+        sys.path.insert(0, str(import_root))
 
 from emolpat.components import load_components
 from scripts.build_suite import COMPONENT_DIRECTORIES

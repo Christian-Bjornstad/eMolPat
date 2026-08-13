@@ -1,9 +1,24 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from scripts.checkout_components import checkout_components
+
+
+def test_checkout_script_runs_directly_outside_repository(tmp_path: Path) -> None:
+    script = Path("scripts/checkout_components.py").resolve()
+
+    completed = subprocess.run(
+        (sys.executable, str(script), "--help"),
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_checkout_uses_exact_pinned_commits_without_a_shell(tmp_path: Path) -> None:
