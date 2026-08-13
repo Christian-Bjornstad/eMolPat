@@ -7,14 +7,9 @@ import site
 import sys
 from pathlib import Path
 
-DEFAULT_RELEASE_ROOT = Path(
-    r"K:\Felles\KDI\Delte\PAT\Molekylaerpatologi\Molpat OCCI\Administrasjon"
-    r"\Timeliste\Hemato\Christian\Apper\eMolPat\releases\1.0.0"
-)
-
 
 def activate_user_site() -> Path:
-    if not ((3, 12) <= sys.version_info[:2] < (3, 15)):
+    if sys.version_info[:2] != (3, 12):
         raise RuntimeError(
             f"Python FELLES-versjon støttes ikke: {sys.version.split()[0]}"
         )
@@ -29,7 +24,10 @@ def activate_user_site() -> Path:
 
 def release_root() -> Path:
     configured = os.environ.get("EMOLPAT_RELEASE_ROOT")
-    return Path(configured) if configured else DEFAULT_RELEASE_ROOT
+    root = Path(configured) if configured else Path(__file__).resolve().parent
+    root = root.resolve()
+    os.environ["EMOLPAT_RELEASE_ROOT"] = str(root)
+    return root
 
 
 def _activate_bootstrap_wheels(root: Path) -> None:
