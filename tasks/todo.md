@@ -6,7 +6,7 @@
 - [x] Task 4: Establish installable upstream module entry points
 - [x] Checkpoint A: Contracts and component readiness
 - [x] Task 5: Implement the application handoff coordinator
-- [ ] Task 6: Build the approved PyQt6 portal
+- [x] Task 6: Build the approved PyQt6 portal
 - [ ] Task 7: Add redacted logging and startup failure recovery
 - [ ] Task 8: Implement offline install, repair, and rollback
 - [ ] Checkpoint B: Working local suite

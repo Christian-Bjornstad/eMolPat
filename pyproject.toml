@@ -27,11 +27,14 @@ emolpat = "emolpat.__main__:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"emolpat.ui.resources" = ["*.json", "*.png", "*.svg", "*.ico"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+qt_api = "pyqt6"
 
 [tool.ruff]
 target-version = "py312"
 line-length = 88
-
