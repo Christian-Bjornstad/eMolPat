@@ -105,3 +105,16 @@ class HealthReport:
     state: SuiteState
     suite_version: str | None
     issues: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ComponentSpec:
+    """Immutable source contract for one bundled application repository."""
+
+    id: str
+    repository: str
+    commit: str
+    distribution: str
+    import_name: str
+    entry_point: str
+    test_command: tuple[str, ...]
