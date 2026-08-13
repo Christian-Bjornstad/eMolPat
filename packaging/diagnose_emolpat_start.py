@@ -13,6 +13,10 @@ import traceback
 from pathlib import Path
 
 WINDOWS_PATH = re.compile(r"(?i)(?:[a-z]:\\|\\\\)[^\s\"']+")
+PATIENT_LIKE_TOKEN = re.compile(
+    r"\b(?:patient|pasient|sample|prøve|prove)[-_ ]?\d+[A-Za-z0-9_-]*\b",
+    flags=re.IGNORECASE,
+)
 
 
 def redact(text: str) -> str:
@@ -33,7 +37,8 @@ def redact(text: str) -> str:
         filename = ntpath.basename(match.group(0).rstrip("\\/"))
         return rf"[path]\{filename}" if filename else "[path]"
 
-    return WINDOWS_PATH.sub(hide_unknown_path, safe)
+    without_paths = WINDOWS_PATH.sub(hide_unknown_path, safe)
+    return PATIENT_LIKE_TOKEN.sub("[redacted]", without_paths)
 
 
 def _module_location() -> str:

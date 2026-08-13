@@ -38,6 +38,15 @@ def test_redact_hides_user_identity_but_keeps_useful_location_tokens(
     assert "python.exe" in text
 
 
+def test_redact_removes_patient_and_sample_like_tokens() -> None:
+    text = redact("patient-123 sample_456 prøve 789")
+
+    assert "123" not in text
+    assert "456" not in text
+    assert "789" not in text
+    assert text == "[redacted] [redacted] [redacted]"
+
+
 def test_diagnostic_lines_show_runtime_and_full_redacted_exception(
     monkeypatch,
     tmp_path: Path,
