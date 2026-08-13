@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from emolpat.domain import HealthReport, SuiteManifest, SuiteState
+from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
 from emolpat.ui.translations import INSTALL_STAGE_TEXT, NAVIGATION, STATE_TEXT
 from emolpat.ui.widgets import ApplicationCard, StatusBanner, placeholder_page
 
@@ -49,6 +49,7 @@ QFrame#applicationCard:hover { border-color: #87aaa9; }
 QLabel#installProgress { background: #e8f2f3; color: #17393b;
   border: 1px solid #9ebfc0; border-radius: 6px; padding: 10px 14px;
   font-weight: 600; }
+QLabel#systemIssues { color: #567174; font-size: 13px; }
 QLabel#moduleName { color: #12383b; font-size: 17px; font-weight: 700; }
 QLabel#moduleVersion { color: #6b8183; font-size: 12px; }
 QLabel#moduleDescription { color: #4b6264; font-size: 13px; }
@@ -70,11 +71,18 @@ class MainWindow(QMainWindow):
     """Suite dashboard that emits one selected module and then closes."""
 
     module_selected = pyqtSignal(str)
+    install_requested = pyqtSignal()
 
-    def __init__(self, manifest: SuiteManifest, health: HealthReport) -> None:
+    def __init__(
+        self,
+        manifest: SuiteManifest,
+        health: HealthReport,
+        release_available: bool = False,
+    ) -> None:
         super().__init__()
         self.manifest = manifest
         self.health = health
+        self.release_available = release_available
         self.application_cards: list[ApplicationCard] = []
         self.navigation_buttons: list[QPushButton] = []
         self.setWindowTitle(f"eMolPat {manifest.suite_version}")
@@ -167,12 +175,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.install_progress)
         self.pages = QStackedWidget()
         self.pages.addWidget(self._build_applications_page())
-        self.pages.addWidget(
-            placeholder_page(
-                "Systemstatus",
-                "Her vises kontroll av Python FELLES og alle komponentene i pakken.",
-            )
-        )
+        self.system_status_page = self._build_system_status_page()
+        self.pages.addWidget(self.system_status_page)
         self.pages.addWidget(
             placeholder_page(
                 "Oppdater eMolPat",
@@ -190,6 +194,35 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.about_page)
         layout.addWidget(self.pages)
         return container
+
+    def _build_system_status_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(14)
+        title = QLabel("Systemstatus")
+        title.setObjectName("pageTitle")
+        self.system_summary = QLabel()
+        self.system_summary.setObjectName("pageIntro")
+        self.system_summary.setWordWrap(True)
+        self.system_issues = QLabel()
+        self.system_issues.setObjectName("systemIssues")
+        self.system_issues.setWordWrap(True)
+        self.install_button = QPushButton()
+        self.install_button.setObjectName("primaryButton")
+        self.install_button.setMinimumHeight(44)
+        self.install_button.setAccessibleName("Installer eller reparer eMolPat")
+        self.install_button.clicked.connect(self._request_install)
+        layout.addWidget(title)
+        layout.addWidget(self.system_summary)
+        layout.addWidget(self.system_issues)
+        layout.addWidget(
+            self.install_button,
+            alignment=Qt.AlignmentFlag.AlignLeft,
+        )
+        layout.addStretch(1)
+        self._update_system_status()
+        return page
 
     def _build_about_page(self) -> QWidget:
         page = QWidget()
@@ -264,6 +297,45 @@ class MainWindow(QMainWindow):
         scroll.setWidget(cards)
         layout.addWidget(scroll, 1)
         return page
+
+    def _request_install(self) -> None:
+        self.set_install_running(True)
+        self.install_requested.emit()
+
+    def _update_system_status(self) -> None:
+        title, detail = STATE_TEXT[self.health.state.value]
+        self.system_summary.setText(f"{title}. {detail}")
+        self.system_issues.setText("\n".join(self.health.issues))
+        action_text = {
+            SuiteState.NOT_INSTALLED: "Installer programmer",
+            SuiteState.REPAIR_REQUIRED: "Reparer installasjon",
+            SuiteState.UPDATE_AVAILABLE: "Oppdater eMolPat",
+        }.get(self.health.state)
+        self.install_button.setText(action_text or "")
+        self.install_button.setVisible(bool(action_text and self.release_available))
+
+    def set_install_running(self, running: bool) -> None:
+        self.install_button.setEnabled(not running)
+        if running:
+            self.pages.setCurrentWidget(self.system_status_page)
+
+    def set_health(self, health: HealthReport) -> None:
+        self.health = health
+        ready = health.state is SuiteState.READY
+        title, detail = STATE_TEXT[health.state.value]
+        self.status_banner.set_status(title, detail, ready)
+        for card in self.application_cards:
+            card.set_enabled(ready)
+        self._update_system_status()
+
+    def finish_install(self, result: InstallResult, health: HealthReport) -> None:
+        self.set_install_running(False)
+        self.set_health(health)
+        if not result.ok:
+            self.install_progress.setText(
+                f"Installasjonen stoppet under: {INSTALL_STAGE_TEXT[result.stage]}"
+            )
+            self.install_progress.show()
 
     def _open_module(self, module_id: str) -> None:
         self.module_selected.emit(module_id)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLabel
 
-from emolpat.domain import HealthReport, SuiteManifest, SuiteState
+from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
 from emolpat.ui.main_window import MainWindow
 
 
@@ -128,3 +128,45 @@ def test_ready_state_is_a_compact_top_status_box(
     assert window.status_banner.text() == "Klar til bruk"
     assert window.status_banner.maximumWidth() <= 220
     assert window.status_banner.detail_label.isHidden()
+
+
+def test_not_installed_shows_install_action_and_disables_launch(
+    qtbot,
+    manifest: SuiteManifest,
+) -> None:
+    health = HealthReport(SuiteState.NOT_INSTALLED, None, ("not installed",))
+    window = MainWindow(manifest, health, release_available=True)
+    qtbot.addWidget(window)
+
+    assert not any(card.open_button.isEnabled() for card in window.application_cards)
+    assert window.install_button.text() == "Installer programmer"
+    assert not window.install_button.isHidden()
+
+
+def test_repair_state_shows_repair_action(qtbot, manifest: SuiteManifest) -> None:
+    health = HealthReport(SuiteState.REPAIR_REQUIRED, "1.0.0", ("missing",))
+    window = MainWindow(manifest, health, release_available=True)
+    qtbot.addWidget(window)
+
+    assert window.install_button.text() == "Reparer installasjon"
+
+
+def test_successful_install_refresh_enables_all_apps(
+    qtbot,
+    manifest: SuiteManifest,
+) -> None:
+    window = MainWindow(
+        manifest,
+        HealthReport(SuiteState.NOT_INSTALLED, None, ()),
+        release_available=True,
+    )
+    qtbot.addWidget(window)
+    window.set_install_running(True)
+
+    window.finish_install(
+        InstallResult(ok=True, stage="record"),
+        HealthReport(SuiteState.READY, "1.0.0", ()),
+    )
+
+    assert all(card.open_button.isEnabled() for card in window.application_cards)
+    assert window.install_button.isHidden()

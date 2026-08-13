@@ -110,6 +110,27 @@ def test_successful_install_writes_verified_record_atomically(tmp_path: Path) ->
     assert (paths.rollback / "1.1.0" / "manifest.json").is_file()
 
 
+def test_successful_install_reports_stages_in_order(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+    stages = []
+
+    result = install_release(
+        release,
+        RecordingRunner(),
+        paths_at(tmp_path / "user"),
+        progress=stages.append,
+    )
+
+    assert result.ok
+    assert stages == [
+        "preflight",
+        "dependencies",
+        "components",
+        "verification",
+        "record",
+    ]
+
+
 def test_failed_update_does_not_write_new_install_record(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
     paths = paths_at(tmp_path / "user")

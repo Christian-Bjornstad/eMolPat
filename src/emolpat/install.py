@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -157,8 +158,11 @@ def install_release(
     release_root: Path,
     runner: CommandRunner = run_command,
     paths: UserPaths | None = None,
+    progress: Callable[[str], None] | None = None,
 ) -> InstallResult:
     """Install all suite components and record success only after verification."""
+    report_progress = progress or (lambda _stage: None)
+    report_progress("preflight")
     if paths is None:
         raise ValueError("per-user eMolPat paths are required")
     root = release_root.resolve()
@@ -178,6 +182,7 @@ def install_release(
     except InstallRecordError:
         return InstallResult(ok=False, stage="preflight")
     for command in build_pip_commands(root):
+        report_progress(command.stage)
         code = runner(command)
         if code != 0:
             rolled_back = _attempt_rollback(previous, runner, paths)
@@ -188,6 +193,7 @@ def install_release(
                 rolled_back=rolled_back,
             )
 
+    report_progress("verification")
     if not _runner_verifies(runner, manifest):
         rolled_back = _attempt_rollback(previous, runner, paths)
         return InstallResult(
@@ -196,6 +202,7 @@ def install_release(
             rolled_back=rolled_back,
         )
 
+    report_progress("record")
     record = InstallRecord(
         suite_version=manifest.suite_version,
         manifest_sha256=sha256_file(root / "manifest.json"),

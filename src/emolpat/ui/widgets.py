@@ -61,6 +61,13 @@ class StatusBanner(QFrame):
     def text(self) -> str:
         return self.title_label.text()
 
+    def set_status(self, title: str, detail: str, ready: bool) -> None:
+        self.title_label.setText(title)
+        self.detail_label.setText(detail)
+        self.setProperty("ready", ready)
+        self.style().unpolish(self)
+        self.style().polish(self)
+
 
 class ApplicationCard(QFrame):
     """One analysis application and its single primary launch action."""
@@ -105,21 +112,18 @@ class ApplicationCard(QFrame):
         description.setObjectName("moduleDescription")
         description.setWordWrap(True)
 
-        status = QLabel("●  Kontrollert" if enabled else "●  Ikke klar")
-        status.setObjectName("moduleStatus")
-        status.setProperty("ready", enabled)
+        self.status_label = QLabel()
+        self.status_label.setObjectName("moduleStatus")
 
         self.open_button = QPushButton("Åpne program")
         self.open_button.setObjectName("primaryButton")
         self.open_button.setMinimumHeight(44)
-        self.open_button.setEnabled(enabled)
         self.open_button.setAccessibleName(f"Åpne {module.name}")
-        self.open_button.setToolTip(
-            f"Åpne {module.name}" if enabled else "eMolPat må repareres først"
-        )
+        self.module_name = module.name
+        self.set_enabled(enabled)
 
         footer = QHBoxLayout()
-        footer.addWidget(status)
+        footer.addWidget(self.status_label)
         footer.addStretch(1)
         footer.addWidget(self.open_button)
 
@@ -130,6 +134,14 @@ class ApplicationCard(QFrame):
         layout.addWidget(description)
         layout.addStretch(1)
         layout.addLayout(footer)
+
+    def set_enabled(self, enabled: bool) -> None:
+        self.status_label.setText("●  Kontrollert" if enabled else "●  Ikke klar")
+        self.status_label.setProperty("ready", enabled)
+        self.open_button.setEnabled(enabled)
+        self.open_button.setToolTip(
+            f"Åpne {self.module_name}" if enabled else "eMolPat må repareres først"
+        )
 
 
 def placeholder_page(title: str, body: str, action: str | None = None) -> QFrame:
