@@ -77,3 +77,31 @@ class VerificationReport:
 
     ok: bool
     issues: tuple[VerificationIssue, ...]
+
+
+@dataclass(frozen=True)
+class InstalledModule:
+    """Exact module identity recorded after successful installation."""
+
+    distribution: str
+    version: str
+    import_name: str
+
+
+@dataclass(frozen=True)
+class InstallRecord:
+    """Last suite version that passed complete per-user verification."""
+
+    suite_version: str
+    manifest_sha256: str
+    verified_at: str
+    modules: tuple[InstalledModule, ...]
+
+
+@dataclass(frozen=True)
+class HealthReport:
+    """Derived health state for the complete installed suite."""
+
+    state: SuiteState
+    suite_version: str | None
+    issues: tuple[str, ...]
