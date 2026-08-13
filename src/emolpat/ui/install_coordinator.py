@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 
-from emolpat.domain import HealthReport, InstallResult
+from emolpat.domain import HealthReport, InstallResult, SuiteState
 from emolpat.install import CommandRunner, install_release, run_command
 from emolpat.paths import UserPaths
 
@@ -45,13 +46,36 @@ class _InstallThread(QThread):
         self.health: HealthReport | None = None
 
     def run(self) -> None:
-        self.result = self.installer(
-            self.release_root,
-            self.runner,
-            self.paths,
-            self.stage_changed.emit,
-        )
-        self.health = self.health_loader()
+        stage = "preflight"
+
+        def report_progress(current_stage: str) -> None:
+            nonlocal stage
+            stage = current_stage
+            self.stage_changed.emit(current_stage)
+
+        try:
+            self.result = self.installer(
+                self.release_root,
+                self.runner,
+                self.paths,
+                report_progress,
+            )
+        except Exception:
+            logging.getLogger("emolpat").exception(
+                "unexpected_install_failure stage=%s",
+                stage,
+            )
+            self.result = InstallResult(ok=False, stage=stage)
+
+        try:
+            self.health = self.health_loader()
+        except Exception:
+            logging.getLogger("emolpat").exception("health_refresh_failed")
+            self.health = HealthReport(
+                SuiteState.REPAIR_REQUIRED,
+                None,
+                ("internal_install_error",),
+            )
 
 
 class InstallCoordinator(QObject):

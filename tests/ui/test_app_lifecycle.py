@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QTimer
 
-from emolpat.domain import HealthReport, SuiteManifest, SuiteState
+from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
 from emolpat.paths import UserPaths
 from emolpat.ui.app import PortalOutcome, run_application_loop, run_portal
 from emolpat.ui.main_window import MainWindow
@@ -114,6 +114,11 @@ def test_run_portal_wires_install_action_to_coordinator(
 
         def start(self) -> bool:
             started.append(True)
+            for callback in self.finished.callbacks:
+                callback(
+                    InstallResult(ok=True, stage="record"),
+                    HealthReport(SuiteState.READY, "1.0.0", ()),
+                )
             return True
 
     monkeypatch.setattr("emolpat.ui.app.InstallCoordinator", FakeCoordinator)

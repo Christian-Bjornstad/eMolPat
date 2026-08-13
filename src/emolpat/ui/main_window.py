@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -83,6 +84,7 @@ class MainWindow(QMainWindow):
         self.manifest = manifest
         self.health = health
         self.release_available = release_available
+        self._install_running = False
         self.application_cards: list[ApplicationCard] = []
         self.navigation_buttons: list[QPushButton] = []
         self.setWindowTitle(f"eMolPat {manifest.suite_version}")
@@ -315,6 +317,7 @@ class MainWindow(QMainWindow):
         self.install_button.setVisible(bool(action_text and self.release_available))
 
     def set_install_running(self, running: bool) -> None:
+        self._install_running = running
         self.install_button.setEnabled(not running)
         if running:
             self.pages.setCurrentWidget(self.system_status_page)
@@ -340,3 +343,10 @@ class MainWindow(QMainWindow):
     def _open_module(self, module_id: str) -> None:
         self.module_selected.emit(module_id)
         self.close()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Keep the portal alive until the atomic installation has finished."""
+        if self._install_running:
+            event.ignore()
+            return
+        super().closeEvent(event)

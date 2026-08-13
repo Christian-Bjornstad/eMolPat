@@ -170,3 +170,23 @@ def test_successful_install_refresh_enables_all_apps(
 
     assert all(card.open_button.isEnabled() for card in window.application_cards)
     assert window.install_button.isHidden()
+
+
+def test_portal_stays_open_while_installation_is_running(
+    qtbot,
+    manifest: SuiteManifest,
+) -> None:
+    window = MainWindow(
+        manifest,
+        HealthReport(SuiteState.NOT_INSTALLED, None, ()),
+        release_available=True,
+    )
+    qtbot.addWidget(window)
+    window.show()
+    window.set_install_running(True)
+
+    window.close()
+
+    assert window.isVisible()
+    window.set_install_running(False)
+    window.close()

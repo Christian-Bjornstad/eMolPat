@@ -51,3 +51,51 @@ def test_coordinator_refuses_concurrent_install(qtbot, tmp_path: Path) -> None:
     with qtbot.waitSignal(coordinator.finished, timeout=3000):
         assert coordinator.start()
         assert not coordinator.start()
+
+
+def test_coordinator_reports_unexpected_installer_failure(qtbot, tmp_path: Path) -> None:
+    repair = HealthReport(
+        SuiteState.REPAIR_REQUIRED,
+        None,
+        ("internal_install_error",),
+    )
+
+    def installer(_root, _runner, _paths, progress):
+        progress("components")
+        raise RuntimeError("simulated failure")
+
+    coordinator = InstallCoordinator(
+        tmp_path,
+        paths_at(tmp_path / "user"),
+        health_loader=lambda: repair,
+        installer=installer,
+    )
+
+    with qtbot.waitSignal(coordinator.finished, timeout=3000) as signal:
+        assert coordinator.start()
+
+    assert signal.args == [InstallResult(ok=False, stage="components"), repair]
+    assert not coordinator.running
+
+
+def test_coordinator_reports_failed_health_refresh(qtbot, tmp_path: Path) -> None:
+    def broken_health_loader() -> HealthReport:
+        raise RuntimeError("simulated health failure")
+
+    coordinator = InstallCoordinator(
+        tmp_path,
+        paths_at(tmp_path / "user"),
+        health_loader=broken_health_loader,
+        installer=lambda _root, _runner, _paths, _progress: InstallResult(
+            ok=True,
+            stage="record",
+        ),
+    )
+
+    with qtbot.waitSignal(coordinator.finished, timeout=3000) as signal:
+        assert coordinator.start()
+
+    result, health = signal.args
+    assert result == InstallResult(ok=True, stage="record")
+    assert health.state is SuiteState.REPAIR_REQUIRED
+    assert health.issues == ("internal_install_error",)
