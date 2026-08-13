@@ -7,7 +7,7 @@
 - [x] Checkpoint A: Contracts and component readiness
 - [x] Task 5: Implement the application handoff coordinator
 - [x] Task 6: Build the approved PyQt6 portal
-- [ ] Task 7: Add redacted logging and startup failure recovery
+- [x] Task 7: Add redacted logging and startup failure recovery
 - [ ] Task 8: Implement offline install, repair, and rollback
 - [ ] Checkpoint B: Working local suite
 - [ ] Task 9: Build reproducible atomic suite artifacts
