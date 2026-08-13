@@ -10,7 +10,7 @@
 - [x] Task 7: Add redacted logging and startup failure recovery
 - [x] Task 8: Implement offline install, repair, and rollback
 - [x] Checkpoint B: Working local suite
-- [ ] Task 9: Build reproducible atomic suite artifacts
+- [x] Task 9: Build reproducible atomic suite artifacts
 - [ ] Task 10: Add Python FELLES and Ivanti launchers
 - [ ] Task 11: Complete end-to-end validation and documentation
 - [ ] Checkpoint C: Managed-workstation release candidate
