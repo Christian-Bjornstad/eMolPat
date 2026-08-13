@@ -1,0 +1,67 @@
+name: Publish eMolPat Windows release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing semantic version tag to publish
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Resolve immutable version
+        shell: pwsh
+        run: |
+          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ inputs.version }}' } else { '${{ github.ref_name }}' }
+          if ($tag -notmatch '^v([0-9]+\.[0-9]+\.[0-9]+)$') { throw "Invalid release tag: $tag" }
+          "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "RELEASE_VERSION=$($Matches[1])" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Refuse existing release assets
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          gh release view $env:RELEASE_TAG
+          if ($LASTEXITCODE -eq 0) { throw "Release already exists: $env:RELEASE_TAG" }
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Static checks
+        run: python -m ruff check .
+      - name: Tests
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM="offscreen"
+          python -m pytest -q
+      - name: Checkout pinned applications
+        run: python scripts/checkout_components.py --output components
+      - name: Build verified offline directory
+        run: python scripts/build_suite.py --version $env:RELEASE_VERSION --output dist --component-root components
+      - name: Verify assembled release
+        run: python scripts/verify_suite.py "dist/eMolPat-$env:RELEASE_VERSION"
+      - name: Create deterministic release assets
+        run: python scripts/archive_release.py "dist/eMolPat-$env:RELEASE_VERSION" --output dist
+      - name: Publish GitHub Release
+        shell: pwsh
+        run: |
+          $version = $env:RELEASE_VERSION
+          gh release create $env:RELEASE_TAG `
+            "dist/eMolPat-$version-windows.zip" `
+            "dist/eMolPat-$version-windows.zip.sha256" `
+            --title "eMolPat $version" `
+            --generate-notes
