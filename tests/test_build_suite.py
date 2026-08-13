@@ -81,3 +81,25 @@ def test_build_rejects_dependency_version_outside_component_contract(
 
     with pytest.raises(RuntimeError, match="unsatisfied dependency"):
         _validate_dependency_matrix([package], [dependency])
+
+
+def test_assembly_requires_exactly_the_five_approved_distributions(
+    tmp_path: Path,
+) -> None:
+    packages, dependencies = create_inputs(tmp_path)
+    packages[-1] = packages[-1].rename(
+        packages[-1].with_name("wrong_app-0.1.0-py3-none-any.whl")
+    )
+
+    with pytest.raises(RuntimeError, match="exactly the five approved"):
+        assemble_release("1.0.0", tmp_path / "dist", packages, dependencies)
+
+
+def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
+    packages, dependencies = create_inputs(tmp_path)
+    packages[1] = packages[1].rename(
+        packages[1].with_name("hemafrag_diagnostics-9.9.9-py3-none-any.whl")
+    )
+
+    with pytest.raises(RuntimeError, match="component wheel version"):
+        assemble_release("1.0.0", tmp_path / "dist", packages, dependencies)

@@ -31,6 +31,13 @@ COMPONENT_DIRECTORIES = {
     "vpm-tolkning": "Archer-prosess",
     "mpn-tolkning": "MPN-Tolkning",
 }
+APPROVED_DISTRIBUTIONS = {
+    "emolpat",
+    "hemafrag-diagnostics",
+    "igh-merge",
+    "archer-prosess",
+    "mpn-tolkning",
+}
 
 
 def _normalize_wheel(path: Path) -> None:
@@ -73,6 +80,25 @@ def assemble_release(
     dependency_wheels: list[Path],
 ) -> Path:
     """Assemble already-built inputs into a deterministic verified layout."""
+    package_versions = {}
+    for wheel in package_wheels:
+        name, wheel_version, _build, _tags = parse_wheel_filename(wheel.name)
+        normalized = canonicalize_name(name)
+        if normalized in package_versions:
+            raise RuntimeError(f"duplicate package wheel: {normalized}")
+        package_versions[normalized] = str(wheel_version)
+    if set(package_versions) != APPROVED_DISTRIBUTIONS:
+        raise RuntimeError("release must contain exactly the five approved distributions")
+
+    template = load_manifest(
+        PROJECT_ROOT / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json"
+    )
+    for module in template.modules:
+        if package_versions[module.distribution] != module.version:
+            raise RuntimeError(
+                f"component wheel version does not match manifest: {module.distribution}"
+            )
+
     root = output.resolve() / f"eMolPat-{version}"
     if root.exists():
         raise FileExistsError(f"release already exists: {root}")
@@ -99,9 +125,6 @@ def assemble_release(
     lock = root / "requirements.lock"
     lock.write_text("\n".join(lock_lines) + "\n", encoding="utf-8", newline="\n")
 
-    template = load_manifest(
-        PROJECT_ROOT / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json"
-    )
     declared_paths = [lock, *packages, *dependencies, *launchers]
     digests = tuple(
         FileDigest(

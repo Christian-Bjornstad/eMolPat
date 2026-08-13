@@ -88,5 +88,20 @@ def verify_release(root: Path, manifest: SuiteManifest) -> VerificationReport:
                 )
             )
 
+    declared_paths = {file.path for file in manifest.files}
+    actual_paths = {
+        path.relative_to(release_root).as_posix()
+        for path in release_root.rglob("*")
+        if path.is_file() and path.name != "manifest.json"
+    }
+    for relative_path in sorted(actual_paths - declared_paths):
+        issues.append(
+            VerificationIssue(
+                code="unexpected_file",
+                path=relative_path,
+                message=f"Unexpected release file: {relative_path}",
+            )
+        )
+
     ordered = tuple(sorted(set(issues), key=lambda issue: (issue.path, issue.code)))
     return VerificationReport(ok=not ordered, issues=ordered)
