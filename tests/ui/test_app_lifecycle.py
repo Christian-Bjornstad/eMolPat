@@ -30,6 +30,7 @@ def test_run_portal_returns_selected_module_after_window_closes(
     outcome = run_portal(manifest, ready_report)
 
     assert outcome == PortalOutcome(selected_module_id="mpn-tolkning")
+    assert not qapp.windowIcon().isNull()
 
 
 class FakePortal:

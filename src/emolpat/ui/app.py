@@ -46,7 +46,7 @@ def run_portal(
     app.setApplicationName("eMolPat")
     app.setOrganizationName("eMolPat")
     app.setWindowIcon(
-        QIcon(str(files("emolpat.ui.resources").joinpath("emolpat.svg")))
+        QIcon(str(files("emolpat.ui.resources").joinpath("emolpat.png")))
     )
 
     selected: list[str] = []

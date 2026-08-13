@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="eMolPat">
-  <rect width="256" height="256" rx="48" fill="#073f43"/>
-  <path d="M65 85c22-30 51-30 73 0s51 30 73 0M65 171c22-30 51-30 73 0s51 30 73 0" fill="none" stroke="#8fd0ca" stroke-width="14" stroke-linecap="round"/>
-  <path d="M76 105h104M76 151h104" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
-  <circle cx="65" cy="85" r="12" fill="#fff"/><circle cx="211" cy="85" r="12" fill="#fff"/>
-  <circle cx="65" cy="171" r="12" fill="#fff"/><circle cx="211" cy="171" r="12" fill="#fff"/>
-</svg>
