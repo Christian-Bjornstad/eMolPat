@@ -162,6 +162,10 @@ def _build_wheel(source: Path, destination: Path) -> None:
 
 
 def _download_dependencies(destination: Path) -> None:
+    lock = PROJECT_ROOT / "release" / "requirements.lock"
+    locked = "--hash=sha256:" in lock.read_text(encoding="utf-8")
+    requirement_file = lock if locked else PROJECT_ROOT / "release" / "requirements.in"
+    hash_arguments = ("--require-hashes", "--no-deps") if locked else ()
     subprocess.run(
         (
             sys.executable,
@@ -179,8 +183,9 @@ def _download_dependencies(destination: Path) -> None:
             "312",
             "--abi",
             "cp312",
+            *hash_arguments,
             "-r",
-            str(PROJECT_ROOT / "release" / "requirements.in"),
+            str(requirement_file),
         ),
         check=True,
     )
@@ -238,7 +243,7 @@ def build_suite(version: str, output: Path, component_root: Path) -> Path:
             list(package_dir.glob("*.whl")),
             list(dependency_dir.glob("*.whl")),
         )
-        for wheel in (*package_dir.glob("*.whl"), *dependency_dir.glob("*.whl")):
+        for wheel in package_dir.glob("*.whl"):
             _normalize_wheel(wheel)
         return assemble_release(
             version,
