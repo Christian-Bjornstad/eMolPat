@@ -21,6 +21,9 @@ Release version: __________  Date: __________  Reviewer: __________
 - [ ] MPN: _____ passed / _____ skipped.
 - [ ] `scripts/verify_suite.py` passes the assembled folder.
 - [ ] Missing wheel and corrupt-checksum tests fail safely.
+- [ ] Release ZIP contains one safe top-level directory.
+- [ ] Downloaded ZIP matches the published SHA-256 sidecar.
+- [ ] GitHub Release contains only the Windows ZIP and checksum assets.
 
 ## Clean managed workstation
 
@@ -29,6 +32,10 @@ Release version: __________  Date: __________  Reviewer: __________
 - [ ] Portal renders at 1024×768 with Norwegian text and four correct icons.
 - [ ] Ready, update, repair, and unavailable states are verified.
 - [ ] Each real module opens and the portal closes.
+- [ ] HemaFrag Diagnostics opens from eMolPat.
+- [ ] IGH Merge opens from eMolPat.
+- [ ] VPM / HTS Tolkning opens from eMolPat.
+- [ ] MPN Tolkning opens from eMolPat.
 - [ ] A failed import reopens the portal with a safe message.
 - [ ] Logs contain no patient identifiers, clinical paths, credentials, or inputs.
 - [ ] No patient files, reports, or application settings were changed.
