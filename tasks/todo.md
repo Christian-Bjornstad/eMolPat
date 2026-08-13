@@ -1,6 +1,6 @@
 # eMolPat implementation checklist
 
-- [ ] Task 1: Establish the package and manifest contract
+- [x] Task 1: Establish the package and manifest contract
 - [ ] Task 2: Verify release integrity before installation
 - [ ] Task 3: Derive installed-suite health
 - [ ] Task 4: Establish installable upstream module entry points
