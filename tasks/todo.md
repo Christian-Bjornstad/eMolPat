@@ -12,7 +12,7 @@
 - [x] Checkpoint B: Working local suite
 - [x] Task 9: Build reproducible atomic suite artifacts
 - [x] Task 10: Add Python FELLES and Ivanti launchers
-- [ ] Task 11: Complete end-to-end validation and documentation
+- [x] Task 11: Complete end-to-end validation and documentation
 - [ ] Checkpoint C: Managed-workstation release candidate
 
 See `docs/superpowers/plans/2026-08-13-emolpat-suite.md` for files, interfaces, tests, commands, and acceptance details.
