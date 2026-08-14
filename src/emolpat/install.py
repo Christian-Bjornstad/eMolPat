@@ -64,7 +64,7 @@ def build_pip_commands(
     wheels = tuple(str(path) for path in sorted((root / "packages").glob("*.whl")))
     components = Command(
         stage="components",
-        argv=(*common, "--no-deps", *wheels),
+        argv=(*common, "--no-deps", "--force-reinstall", *wheels),
     )
     return dependencies, components
 

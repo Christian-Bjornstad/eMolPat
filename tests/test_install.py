@@ -91,6 +91,7 @@ def test_component_command_installs_only_approved_local_wheels(tmp_path: Path) -
 
     assert command.stage == "components"
     assert "--no-index" in command.argv
+    assert "--force-reinstall" in command.argv
     assert str(release / "packages" / "emolpat-1.1.0-py3-none-any.whl") in command.argv
 
 
