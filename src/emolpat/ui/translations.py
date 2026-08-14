@@ -35,3 +35,5 @@ INSTALL_STAGE_TEXT = {
     "record": "Fullfører eMolPat-installasjonen",
     "rollback": "Gjenoppretter forrige godkjente versjon",
 }
+
+INSTALL_COMPLETE_TEXT = "Oppdateringen er fullført. Start eMolPat på nytt."
