@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4-python314-test] - 2026-08-14
+
+- Fixed updates that skipped same-version application wheels.
+- Aligned the installed portal manifest with the suite release version.
+- Added an explicit successful-update message and automatic portal shutdown so
+  the restarted process loads only the new code.
+
 ## [1.0.3-python314-test] - 2026-08-14
 
 - Added a complete offline Windows bundle targeting CPython 3.14 on `win_amd64`.
