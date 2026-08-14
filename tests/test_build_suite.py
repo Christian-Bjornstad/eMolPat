@@ -57,6 +57,23 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     ]
 
 
+def test_assembly_contains_ivanti_free_support_launchers(tmp_path: Path) -> None:
+    packages, dependencies = create_inputs(tmp_path)
+
+    root = assemble_release("1.0.0", tmp_path / "dist", packages, dependencies)
+
+    expected = {
+        "Installer eMolPat - Manuell FELLES.cmd",
+        "Start eMolPat - Manuell FELLES.cmd",
+        "Start eMolPat - Diagnose.cmd",
+        "Start eMolPat - Clean import.cmd",
+        "diagnose_emolpat_start.py",
+    }
+    assert expected <= {path.name for path in root.iterdir()}
+    manifest = load_manifest(root / "manifest.json")
+    assert expected <= {item.path for item in manifest.files}
+
+
 def test_two_assemblies_have_identical_manifests(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 

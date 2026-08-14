@@ -133,6 +133,11 @@ def assemble_release(
             "start_emolpat.py",
             "Installer eMolPat.cmd",
             "Start eMolPat.cmd",
+            "Installer eMolPat - Manuell FELLES.cmd",
+            "Start eMolPat - Manuell FELLES.cmd",
+            "Start eMolPat - Diagnose.cmd",
+            "Start eMolPat - Clean import.cmd",
+            "diagnose_emolpat_start.py",
         ):
             source = packaging_root / filename
             if source.is_file():
