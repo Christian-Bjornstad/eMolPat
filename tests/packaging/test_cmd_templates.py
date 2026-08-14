@@ -33,7 +33,7 @@ def test_cmd_uses_ivanti_and_copies_complete_python_command(
     ("filename", "python_script", "clean_import"),
     [
         ("Installer eMolPat - Manuell FELLES.cmd", "install_emolpat.py", False),
-        ("Start eMolPat - Manuell FELLES.cmd", "start_emolpat.py", False),
+        ("Start eMolPat - Manuell FELLES.cmd", "diagnose_emolpat_start.py", False),
         ("Start eMolPat - Diagnose.cmd", "diagnose_emolpat_start.py", False),
         ("Start eMolPat - Clean import.cmd", "diagnose_emolpat_start.py", True),
     ],
