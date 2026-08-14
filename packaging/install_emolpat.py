@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def activate_user_site() -> Path:
-    if sys.version_info[:2] != (3, 12):
+    if sys.version_info[:2] != (3, 14):
         raise RuntimeError(
             f"Python FELLES-versjon støttes ikke: {sys.version.split()[0]}"
         )

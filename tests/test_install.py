@@ -34,6 +34,7 @@ def create_release(root: Path, version: str = "1.1.0") -> Path:
     portal.write_bytes(b"wheel")
     document = json.loads(Path("tests/fixtures/valid-manifest.json").read_text())
     document["suite_version"] = version
+    document["python_requires"] = ">=3.12,<3.15"
     document["files"] = [
         {
             "path": "requirements.lock",

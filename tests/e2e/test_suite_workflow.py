@@ -44,6 +44,7 @@ def synthetic_release(root: Path) -> Path:
     (root / "requirements.lock").write_bytes(lock)
     (root / "packages" / "emolpat-1.0.0-py3-none-any.whl").write_bytes(wheel)
     document = json.loads(Path("tests/fixtures/valid-manifest.json").read_text())
+    document["python_requires"] = ">=3.12,<3.15"
     document["files"] = [
         {
             "path": "requirements.lock",
