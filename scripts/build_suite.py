@@ -295,7 +295,6 @@ def build_suite(
         _validate_dependency_matrix(
             list(package_dir.glob("*.whl")),
             list(dependency_dir.glob("*.whl")),
-            target,
         )
         for wheel in package_dir.glob("*.whl"):
             _normalize_wheel(wheel)
@@ -304,6 +303,7 @@ def build_suite(
             output,
             list(package_dir.glob("*.whl")),
             list(dependency_dir.glob("*.whl")),
+            target,
         )
 
 

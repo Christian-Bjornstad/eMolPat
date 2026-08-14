@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import scripts.build_suite as builder
 from emolpat.integrity import verify_release
 from emolpat.manifest import load_manifest
 from scripts.build_suite import (
@@ -162,3 +163,52 @@ def test_python_314_dependency_input_is_fully_pinned() -> None:
 
     assert len(lines) == 79
     assert all("==" in line and " --hash=" not in line for line in lines)
+
+
+def test_build_suite_passes_target_to_download_and_assembly(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    names = iter(
+        (
+            "emolpat-0.1.0-py3-none-any.whl",
+            "hemafrag_diagnostics-1.2.0-py3-none-any.whl",
+            "igh_merge-0.2.0-py3-none-any.whl",
+            "archer_prosess-0.1.0-py3-none-any.whl",
+            "mpn_tolkning-0.1.0-py3-none-any.whl",
+        )
+    )
+    seen: list[tuple[str, object]] = []
+    monkeypatch.setattr(
+        builder,
+        "assert_clean_pinned_checkouts",
+        lambda _root: [Path(str(index)) for index in range(4)],
+    )
+
+    def build_wheel(_source: Path, destination: Path) -> None:
+        (destination / next(names)).write_bytes(b"wheel")
+
+    def download(destination: Path, target: builder.PythonTarget) -> None:
+        seen.append(("download", target))
+        (destination / "packaging-25.0-py3-none-any.whl").write_bytes(b"dependency")
+
+    def assemble(
+        _version: str,
+        output: Path,
+        _packages: list[Path],
+        _dependencies: list[Path],
+        target: builder.PythonTarget,
+    ) -> Path:
+        seen.append(("assemble", target))
+        return output / "release"
+
+    monkeypatch.setattr(builder, "_build_wheel", build_wheel)
+    monkeypatch.setattr(builder, "_download_dependencies", download)
+    monkeypatch.setattr(builder, "_validate_dependency_matrix", lambda _p, _d: None)
+    monkeypatch.setattr(builder, "_normalize_wheel", lambda _wheel: None)
+    monkeypatch.setattr(builder, "assemble_release", assemble)
+
+    result = builder.build_suite("test", tmp_path / "dist", tmp_path / "components")
+
+    assert result == tmp_path / "dist" / "release"
+    assert seen == [("download", PYTHON_314), ("assemble", PYTHON_314)]
