@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -8,7 +9,12 @@ import pytest
 
 from emolpat.integrity import verify_release
 from emolpat.manifest import load_manifest
-from scripts.build_suite import _validate_dependency_matrix, assemble_release
+from scripts.build_suite import (
+    PYTHON_314,
+    _download_dependencies,
+    _validate_dependency_matrix,
+    assemble_release,
+)
 
 
 def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
@@ -42,6 +48,7 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     assert len(list((root / "wheelhouse").glob("*.whl"))) == 1
     manifest = load_manifest(root / "manifest.json")
     assert verify_release(root, manifest).ok
+    assert manifest.python_requires == ">=3.14,<3.15"
     assert [module.id for module in manifest.modules] == [
         "hemafrag",
         "igh-merge",
@@ -103,3 +110,38 @@ def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="component wheel version"):
         assemble_release("1.0.0", tmp_path / "dist", packages, dependencies)
+
+
+def test_dependency_download_targets_cpython_314_windows(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    def record(command: tuple[str, ...], *, check: bool) -> subprocess.CompletedProcess:
+        assert check
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(subprocess, "run", record)
+
+    _download_dependencies(tmp_path, PYTHON_314)
+
+    command = calls[0]
+    assert command[command.index("--python-version") + 1] == "314"
+    assert command[command.index("--abi") + 1] == "cp314"
+    assert command[command.index("--platform") + 1] == "win_amd64"
+    assert "--no-deps" in command
+    requirement_file = Path(command[command.index("-r") + 1])
+    assert requirement_file.name == "requirements-py314.in"
+
+
+def test_python_314_dependency_input_is_fully_pinned() -> None:
+    lines = [
+        line.strip()
+        for line in PYTHON_314.requirements_file.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+
+    assert len(lines) == 79
+    assert all("==" in line and " --hash=" not in line for line in lines)
