@@ -506,8 +506,9 @@ class MainWindow(QMainWindow):
         self.install_progress.show()
 
     def _open_module(self, module_id: str) -> None:
-        self.module_selected.emit(module_id)
-        self.close()
+            self.module_selected.emit(module_id)
+            # Do NOT close the portal – keep it running so the user can
+            # close the app or press a portal button to return later.
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Keep the portal alive until the atomic installation has finished."""
