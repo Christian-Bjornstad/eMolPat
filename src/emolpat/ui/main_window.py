@@ -19,7 +19,12 @@ from PyQt6.QtWidgets import (
 )
 
 from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
-from emolpat.ui.translations import INSTALL_STAGE_TEXT, NAVIGATION, STATE_TEXT
+from emolpat.ui.translations import (
+    INSTALL_COMPLETE_TEXT,
+    INSTALL_STAGE_TEXT,
+    NAVIGATION,
+    STATE_TEXT,
+)
 from emolpat.ui.widgets import ApplicationCard, StatusBanner, placeholder_page
 
 STYLESHEET = """
@@ -334,11 +339,15 @@ class MainWindow(QMainWindow):
     def finish_install(self, result: InstallResult, health: HealthReport) -> None:
         self.set_install_running(False)
         self.set_health(health)
-        if not result.ok:
-            self.install_progress.setText(
-                f"Installasjonen stoppet under: {INSTALL_STAGE_TEXT[result.stage]}"
-            )
+        if result.ok:
+            self.install_progress.setText(INSTALL_COMPLETE_TEXT)
             self.install_progress.show()
+            self.close()
+            return
+        self.install_progress.setText(
+            f"Installasjonen stoppet under: {INSTALL_STAGE_TEXT[result.stage]}"
+        )
+        self.install_progress.show()
 
     def _open_module(self, module_id: str) -> None:
         self.module_selected.emit(module_id)

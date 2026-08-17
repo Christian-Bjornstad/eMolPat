@@ -50,6 +50,14 @@ def build_pip_commands(
         "--user",
         "--no-index",
     )
+    # First command: ensure pip itself is available (critical for Microsoft Store Python)
+    pip_wheel = sorted((root / "wheelhouse").glob("pip-*.whl"))
+    if not pip_wheel:
+        raise RuntimeError("pip wheel not found in wheelhouse")
+    ensure_pip = Command(
+        stage="ensure-pip",
+        argv=(*common, "--no-deps", "--force-reinstall", str(pip_wheel[0])),
+    )
     dependencies = Command(
         stage="dependencies",
         argv=(
@@ -64,9 +72,9 @@ def build_pip_commands(
     wheels = tuple(str(path) for path in sorted((root / "packages").glob("*.whl")))
     components = Command(
         stage="components",
-        argv=(*common, "--no-deps", *wheels),
+        argv=(*common, "--no-deps", "--force-reinstall", *wheels),
     )
-    return dependencies, components
+    return ensure_pip, dependencies, components
 
 
 def run_pip_in_process(arguments: tuple[str, ...]) -> int:

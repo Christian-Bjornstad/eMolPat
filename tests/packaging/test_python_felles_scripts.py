@@ -18,6 +18,7 @@ def test_activate_user_site_places_current_user_first(
 ) -> None:
     namespace = runpy.run_path(str(PACKAGING / name), run_name="launcher_test")
     user_site = tmp_path / "user-site"
+    monkeypatch.setattr(sys, "version_info", (3, 14))
     monkeypatch.setattr(site, "getusersitepackages", lambda: str(user_site))
     monkeypatch.setattr(sys, "path", ["existing", str(user_site)])
 
@@ -50,8 +51,8 @@ def test_bootstrap_scripts_use_their_extracted_release_directory() -> None:
 
 
 @pytest.mark.parametrize("name", ["install_emolpat.py", "start_emolpat.py"])
-@pytest.mark.parametrize("version", [(3, 11), (3, 13)])
-def test_bootstrap_rejects_non_312_python(
+@pytest.mark.parametrize("version", [(3, 12), (3, 13), (3, 15)])
+def test_bootstrap_rejects_non_314_python(
     monkeypatch,
     name: str,
     version: tuple[int, int],
@@ -61,6 +62,19 @@ def test_bootstrap_rejects_non_312_python(
 
     with pytest.raises(RuntimeError, match="støttes ikke"):
         namespace["activate_user_site"]()
+
+
+@pytest.mark.parametrize("name", ["install_emolpat.py", "start_emolpat.py"])
+def test_bootstrap_accepts_python_314(
+    monkeypatch,
+    tmp_path: Path,
+    name: str,
+) -> None:
+    namespace = runpy.run_path(str(PACKAGING / name), run_name="launcher_test")
+    monkeypatch.setattr(sys, "version_info", (3, 14))
+    monkeypatch.setattr(site, "getusersitepackages", lambda: str(tmp_path / "site"))
+
+    assert namespace["activate_user_site"]() == tmp_path / "site"
 
 
 def test_start_script_invokes_installed_suite_entrypoint() -> None:

@@ -6,6 +6,10 @@ from emolpat import __main__ as entrypoint
 from emolpat.domain import HealthReport, SuiteState
 
 
+def test_bundled_manifest_identifies_current_prerelease() -> None:
+    assert entrypoint.bundled_manifest().suite_version == "1.0.4-python314-test"
+
+
 def test_main_uses_observed_installation_health(monkeypatch, tmp_path: Path) -> None:
     observed = HealthReport(
         state=SuiteState.REPAIR_REQUIRED,

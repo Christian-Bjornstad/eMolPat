@@ -113,6 +113,20 @@ The initial deployment model targets Sykehuspartner-managed Windows computers us
 
 Installation is offline, uses `pip --user`, and writes the verified suite record only after all packages and imports pass. See the [Python FELLES guide](docs/operations/python-felles.md) for the complete operator workflow and the [repair guide](docs/operations/repair.md) for controlled recovery.
 
+### Python FELLES 3.14 test prerelease
+
+The prerelease `v1.0.4-python314-test` is a complete offline suite for the
+Python FELLES 3.14 environment. Download
+`eMolPat-1.0.4-python314-test-windows.zip`, extract it, and run
+**Installer eMolPat - Manuell FELLES.cmd**. Open Python FELLES through the
+workstation's normal approved method, paste the copied command, and wait for the
+verified installation to finish. Then use **Start eMolPat - Manuell FELLES.cmd**
+the same way. If startup fails, run **Start eMolPat - Diagnose.cmd** and return
+the displayed text. None of these manual launchers depends on Ivanti.
+
+This is a test prerelease and is not yet approved for routine laboratory use.
+See the [Python 3.14 prerelease notes](docs/releases/1.0.4-python314-test.md).
+
 ## Health and recovery
 
 | State | Meaning |

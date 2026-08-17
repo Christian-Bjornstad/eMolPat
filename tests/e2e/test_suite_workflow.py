@@ -43,7 +43,12 @@ def synthetic_release(root: Path) -> Path:
     wheel = b"synthetic-wheel"
     (root / "requirements.lock").write_bytes(lock)
     (root / "packages" / "emolpat-1.0.0-py3-none-any.whl").write_bytes(wheel)
+    # Add pip wheel for ensure-pip stage
+    (root / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
     document = json.loads(Path("tests/fixtures/valid-manifest.json").read_text())
+    # Use current Python version for tests to pass preflight
+    import sys
+    document["python_requires"] = f">={sys.version_info.major}.{sys.version_info.minor},<{sys.version_info.major}.{sys.version_info.minor + 1}"
     document["files"] = [
         {
             "path": "requirements.lock",
@@ -52,6 +57,10 @@ def synthetic_release(root: Path) -> Path:
         {
             "path": "packages/emolpat-1.0.0-py3-none-any.whl",
             "sha256": hashlib.sha256(wheel).hexdigest(),
+        },
+        {
+            "path": "wheelhouse/pip-26.1.2-py3-none-any.whl",
+            "sha256": hashlib.sha256(b"wheel").hexdigest(),
         },
     ]
     (root / "manifest.json").write_text(json.dumps(document), encoding="utf-8")

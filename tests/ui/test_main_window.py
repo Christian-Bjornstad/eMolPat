@@ -161,7 +161,9 @@ def test_successful_install_refresh_enables_all_apps(
         release_available=True,
     )
     qtbot.addWidget(window)
+    window.show()
     window.set_install_running(True)
+    window.show_install_stage("record")
 
     window.finish_install(
         InstallResult(ok=True, stage="record"),
@@ -170,6 +172,10 @@ def test_successful_install_refresh_enables_all_apps(
 
     assert all(card.open_button.isEnabled() for card in window.application_cards)
     assert window.install_button.isHidden()
+    assert window.install_progress.text() == (
+        "Oppdateringen er fullført. Start eMolPat på nytt."
+    )
+    assert not window.isVisible()
 
 
 def test_portal_stays_open_while_installation_is_running(

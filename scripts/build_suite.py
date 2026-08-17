@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
 from email.parser import Parser
 from pathlib import Path
 
@@ -38,6 +38,24 @@ APPROVED_DISTRIBUTIONS = {
     "archer-prosess",
     "mpn-tolkning",
 }
+
+
+@dataclass(frozen=True)
+class PythonTarget:
+    python_version: str
+    abi: str
+    platform: str
+    python_requires: str
+    requirements_file: Path
+
+
+PYTHON_314 = PythonTarget(
+    python_version="314",
+    abi="cp314",
+    platform="win_amd64",
+    python_requires=">=3.14,<3.15",
+    requirements_file=PROJECT_ROOT / "release" / "requirements-py314.in",
+)
 
 
 def _normalize_wheel(path: Path) -> None:
@@ -78,6 +96,7 @@ def assemble_release(
     output: Path,
     package_wheels: list[Path],
     dependency_wheels: list[Path],
+    target: PythonTarget = PYTHON_314,
 ) -> Path:
     """Assemble already-built inputs into a deterministic verified layout."""
     package_versions = {}
@@ -114,12 +133,17 @@ def assemble_release(
             "start_emolpat.py",
             "Installer eMolPat.cmd",
             "Start eMolPat.cmd",
+            "Installer eMolPat - Manuell FELLES.cmd",
+            "Start eMolPat - Manuell FELLES.cmd",
+            "Start eMolPat - Diagnose.cmd",
+            "Start eMolPat - Clean import.cmd",
+            "diagnose_emolpat_start.py",
         ):
             source = packaging_root / filename
             if source.is_file():
-                target = root / filename
-                shutil.copy2(source, target)
-                launchers.append(target)
+                launcher_target = root / filename
+                shutil.copy2(source, launcher_target)
+                launchers.append(launcher_target)
 
     lock_lines = sorted(_locked_requirement(path) for path in dependencies)
     lock = root / "requirements.lock"
@@ -133,7 +157,12 @@ def assemble_release(
         )
         for path in sorted(declared_paths, key=lambda item: item.relative_to(root).as_posix())
     )
-    manifest = replace(template, suite_version=version, files=digests)
+    manifest = replace(
+        template,
+        suite_version=version,
+        python_requires=target.python_requires,
+        files=digests,
+    )
     document = asdict(manifest)
     (root / "manifest.json").write_text(
         json.dumps(document, indent=2, sort_keys=True) + "\n",
@@ -184,11 +213,7 @@ def _build_wheel(source: Path, destination: Path) -> None:
     )
 
 
-def _download_dependencies(destination: Path) -> None:
-    lock = PROJECT_ROOT / "release" / "requirements.lock"
-    locked = "--hash=sha256:" in lock.read_text(encoding="utf-8")
-    requirement_file = lock if locked else PROJECT_ROOT / "release" / "requirements.in"
-    hash_arguments = ("--require-hashes", "--no-deps") if locked else ()
+def _download_dependencies(destination: Path, target: PythonTarget) -> None:
     subprocess.run(
         (
             sys.executable,
@@ -199,16 +224,16 @@ def _download_dependencies(destination: Path) -> None:
             str(destination),
             "--only-binary=:all:",
             "--platform",
-            "win_amd64",
+            target.platform,
             "--implementation",
             "cp",
             "--python-version",
-            "312",
+            target.python_version,
             "--abi",
-            "cp312",
-            *hash_arguments,
+            target.abi,
+            "--no-deps",
             "-r",
-            str(requirement_file),
+            str(target.requirements_file),
         ),
         check=True,
     )
@@ -247,7 +272,12 @@ def _validate_dependency_matrix(
                 )
 
 
-def build_suite(version: str, output: Path, component_root: Path) -> Path:
+def build_suite(
+    version: str,
+    output: Path,
+    component_root: Path,
+    target: PythonTarget = PYTHON_314,
+) -> Path:
     """Build five package wheels, collect Windows dependencies, and assemble."""
     component_sources = assert_clean_pinned_checkouts(component_root.resolve())
     with tempfile.TemporaryDirectory(prefix="emolpat-build-") as temporary:
@@ -261,7 +291,7 @@ def build_suite(version: str, output: Path, component_root: Path) -> Path:
             _build_wheel(source, package_dir)
         if len(list(package_dir.glob("*.whl"))) != 5:
             raise RuntimeError("suite build must produce exactly five package wheels")
-        _download_dependencies(dependency_dir)
+        _download_dependencies(dependency_dir, target)
         _validate_dependency_matrix(
             list(package_dir.glob("*.whl")),
             list(dependency_dir.glob("*.whl")),
@@ -273,6 +303,7 @@ def build_suite(version: str, output: Path, component_root: Path) -> Path:
             output,
             list(package_dir.glob("*.whl")),
             list(dependency_dir.glob("*.whl")),
+            target,
         )
 
 

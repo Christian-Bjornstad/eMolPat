@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "emolpat"
-version = "0.1.0"
+version = "0.1.1"
 description = "Unified local portal for approved molecular pathology applications"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"

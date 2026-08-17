@@ -32,8 +32,13 @@ def create_release(root: Path, version: str = "1.1.0") -> Path:
     (root / "requirements.lock").write_bytes(lock)
     portal = root / "packages" / "emolpat-1.1.0-py3-none-any.whl"
     portal.write_bytes(b"wheel")
+    # Add pip wheel for ensure-pip stage
+    (root / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
     document = json.loads(Path("tests/fixtures/valid-manifest.json").read_text())
     document["suite_version"] = version
+    # Use current Python version for tests to pass preflight
+    import sys
+    document["python_requires"] = f">={sys.version_info.major}.{sys.version_info.minor},<{sys.version_info.major}.{sys.version_info.minor + 1}"
     document["files"] = [
         {
             "path": "requirements.lock",
@@ -41,6 +46,10 @@ def create_release(root: Path, version: str = "1.1.0") -> Path:
         },
         {
             "path": "packages/emolpat-1.1.0-py3-none-any.whl",
+            "sha256": hashlib.sha256(b"wheel").hexdigest(),
+        },
+        {
+            "path": "wheelhouse/pip-26.1.2-py3-none-any.whl",
             "sha256": hashlib.sha256(b"wheel").hexdigest(),
         },
     ]
@@ -59,7 +68,8 @@ def old_record() -> InstallRecord:
 
 class RecordingRunner:
     def __init__(self, codes: list[int] | None = None, verified: bool = True) -> None:
-        self.codes = iter(codes or [0, 0])
+        # Default: ensure-pip, dependencies, components, verification
+        self.codes = iter(codes or [0, 0, 0, 0])
         self.commands = []
         self.verified = verified
 
@@ -73,8 +83,18 @@ class RecordingRunner:
 
 def test_dependency_command_is_offline_and_per_user(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
+    # Add a pip wheel to the test release
+    (release / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
 
-    command = build_pip_commands(release)[0].argv
+    commands = build_pip_commands(release)
+    # First command is now ensure-pip
+    ensure_pip_cmd = commands[0].argv
+    assert "pip-26.1.2-py3-none-any.whl" in " ".join(ensure_pip_cmd)
+    assert "--no-deps" in ensure_pip_cmd
+    assert "--force-reinstall" in ensure_pip_cmd
+
+    # Second command is dependencies
+    command = commands[1].argv
 
     assert "--user" in command
     assert "--no-index" in command
@@ -86,10 +106,11 @@ def test_dependency_command_is_offline_and_per_user(tmp_path: Path) -> None:
 def test_component_command_installs_only_approved_local_wheels(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
 
-    command = build_pip_commands(release)[1]
+    command = build_pip_commands(release)[2]
 
     assert command.stage == "components"
     assert "--no-index" in command.argv
+    assert "--force-reinstall" in command.argv
     assert str(release / "packages" / "emolpat-1.1.0-py3-none-any.whl") in command.argv
 
 
@@ -112,6 +133,8 @@ def test_successful_install_writes_verified_record_atomically(tmp_path: Path) ->
 
 def test_successful_install_reports_stages_in_order(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
+    # Add a pip wheel to the test release
+    (release / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
     stages = []
 
     result = install_release(
@@ -124,6 +147,7 @@ def test_successful_install_reports_stages_in_order(tmp_path: Path) -> None:
     assert result.ok
     assert stages == [
         "preflight",
+        "ensure-pip",
         "dependencies",
         "components",
         "verification",
@@ -135,12 +159,13 @@ def test_failed_update_does_not_write_new_install_record(tmp_path: Path) -> None
     release = create_release(tmp_path / "release")
     paths = paths_at(tmp_path / "user")
     replace_install_record(paths.install_record, old_record())
+    # Fails at dependencies stage (index 1)
     runner = RecordingRunner(codes=[0, 9])
 
     result = install_release(release, runner, paths)
 
     assert not result.ok
-    assert result.stage == "components"
+    assert result.stage == "dependencies"
     assert read_install_record(paths.install_record) == old_record()
 
 
@@ -148,7 +173,8 @@ def test_failed_verification_keeps_previous_record(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
     paths = paths_at(tmp_path / "user")
     replace_install_record(paths.install_record, old_record())
-    runner = RecordingRunner(verified=False)
+    # Fails at verification stage (index 3) - verification returns False
+    runner = RecordingRunner(codes=[0, 0, 0, 0], verified=False)
 
     result = install_release(release, runner, paths)
 
@@ -159,18 +185,24 @@ def test_failed_verification_keeps_previous_record(tmp_path: Path) -> None:
 
 def test_failed_update_restores_retained_previous_release(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
+    # Add a pip wheel to the test release
+    (release / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
     paths = paths_at(tmp_path / "user")
     replace_install_record(paths.install_record, old_record())
     create_release(paths.rollback / "1.0.0", version="1.0.0")
-    runner = RecordingRunner(codes=[0, 9, 0, 0])
+    # Rollback also needs pip wheel
+    (paths.rollback / "1.0.0" / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
+    runner = RecordingRunner(codes=[0, 0, 9, 0, 0, 0, 0])
 
     result = install_release(release, runner, paths)
 
     assert not result.ok
     assert result.rolled_back
     assert [command.stage for command in runner.commands] == [
+        "ensure-pip",
         "dependencies",
         "components",
+        "ensure-pip",
         "dependencies",
         "components",
     ]

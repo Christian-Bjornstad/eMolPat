@@ -26,7 +26,7 @@ def test_load_manifest_returns_the_four_approved_modules() -> None:
 
     assert manifest.schema_version == 1
     assert manifest.suite_version == "1.0.0"
-    assert manifest.python_requires == ">=3.12,<3.13"
+    assert manifest.python_requires == ">=3.14,<3.15"
     assert tuple(module.id for module in manifest.modules) == APPROVED_MODULE_IDS
     assert manifest.module("hemafrag").entry_point == (
         "hemafrag_diagnostics.__main__:main"
