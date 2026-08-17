@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 from emolpat.domain import InstalledModule, InstallRecord
@@ -68,8 +69,8 @@ def old_record() -> InstallRecord:
 
 class RecordingRunner:
     def __init__(self, codes: list[int] | None = None, verified: bool = True) -> None:
-        # Default: ensure-pip, dependencies, components, verification
-        self.codes = iter(codes or [0, 0, 0, 0])
+        # Default: ensurepip-bootstrap, ensure-pip, dependencies, components, verification
+        self.codes = iter(codes or [0, 0, 0, 0, 0])
         self.commands = []
         self.verified = verified
 
@@ -87,14 +88,18 @@ def test_dependency_command_is_offline_and_per_user(tmp_path: Path) -> None:
     (release / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
 
     commands = build_pip_commands(release)
-    # First command is now ensure-pip
-    ensure_pip_cmd = commands[0].argv
+    # First command is now ensurepip-bootstrap
+    ensurepip_bootstrap_cmd = commands[0].argv
+    assert ensurepip_bootstrap_cmd == (sys.executable, "-m", "ensurepip", "--user", "--upgrade")
+    
+    # Second command is ensure-pip
+    ensure_pip_cmd = commands[1].argv
     assert "pip-26.1.2-py3-none-any.whl" in " ".join(ensure_pip_cmd)
     assert "--no-deps" in ensure_pip_cmd
     assert "--force-reinstall" in ensure_pip_cmd
 
-    # Second command is dependencies
-    command = commands[1].argv
+    # Third command is dependencies
+    command = commands[2].argv
 
     assert "--user" in command
     assert "--no-index" in command
@@ -106,7 +111,7 @@ def test_dependency_command_is_offline_and_per_user(tmp_path: Path) -> None:
 def test_component_command_installs_only_approved_local_wheels(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
 
-    command = build_pip_commands(release)[2]
+    command = build_pip_commands(release)[3]
 
     assert command.stage == "components"
     assert "--no-index" in command.argv
@@ -147,6 +152,7 @@ def test_successful_install_reports_stages_in_order(tmp_path: Path) -> None:
     assert result.ok
     assert stages == [
         "preflight",
+        "ensurepip-bootstrap",
         "ensure-pip",
         "dependencies",
         "components",
@@ -159,8 +165,8 @@ def test_failed_update_does_not_write_new_install_record(tmp_path: Path) -> None
     release = create_release(tmp_path / "release")
     paths = paths_at(tmp_path / "user")
     replace_install_record(paths.install_record, old_record())
-    # Fails at dependencies stage (index 1)
-    runner = RecordingRunner(codes=[0, 9])
+    # Fails at dependencies stage (index 2)
+    runner = RecordingRunner(codes=[0, 0, 9])
 
     result = install_release(release, runner, paths)
 
@@ -173,8 +179,8 @@ def test_failed_verification_keeps_previous_record(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
     paths = paths_at(tmp_path / "user")
     replace_install_record(paths.install_record, old_record())
-    # Fails at verification stage (index 3) - verification returns False
-    runner = RecordingRunner(codes=[0, 0, 0, 0], verified=False)
+    # Fails at verification stage (index 4) - verification returns False
+    runner = RecordingRunner(codes=[0, 0, 0, 0, 0], verified=False)
 
     result = install_release(release, runner, paths)
 
@@ -192,20 +198,22 @@ def test_failed_update_restores_retained_previous_release(tmp_path: Path) -> Non
     create_release(paths.rollback / "1.0.0", version="1.0.0")
     # Rollback also needs pip wheel
     (paths.rollback / "1.0.0" / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
-    runner = RecordingRunner(codes=[0, 0, 9, 0, 0, 0, 0])
+    runner = RecordingRunner(codes=[0, 0, 0, 9, 0, 0, 0, 0])
 
     result = install_release(release, runner, paths)
 
     assert not result.ok
     assert result.rolled_back
     assert [command.stage for command in runner.commands] == [
-        "ensure-pip",
-        "dependencies",
-        "components",
-        "ensure-pip",
-        "dependencies",
-        "components",
-    ]
+            "ensurepip-bootstrap",
+            "ensure-pip",
+            "dependencies",
+            "components",
+            "ensurepip-bootstrap",
+            "ensure-pip",
+            "dependencies",
+            "components",
+        ]
     assert read_install_record(paths.install_record) == old_record()
 
 

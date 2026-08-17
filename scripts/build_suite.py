@@ -112,6 +112,22 @@ def assemble_release(
     template = load_manifest(
         PROJECT_ROOT / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json"
     )
+    
+    # Validate manifest version matches release version
+    if template.suite_version != version:
+        raise RuntimeError(
+            f"bundled manifest version '{template.suite_version}' does not match "
+            f"release version '{version}'. Update src/emolpat/ui/resources/suite-manifest.json"
+        )
+    
+    # Validate no placeholder SHA256 hashes
+    for file_digest in template.files:
+        if file_digest.sha256 == "a" * 64:
+            raise RuntimeError(
+                f"placeholder SHA256 detected in manifest for '{file_digest.path}'. "
+                f"Update with actual hash before building."
+            )
+    
     for module in template.modules:
         if package_versions[module.distribution] != module.version:
             raise RuntimeError(
