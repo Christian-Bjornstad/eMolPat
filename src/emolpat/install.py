@@ -50,7 +50,13 @@ def build_pip_commands(
         "--user",
         "--no-index",
     )
-    # First command: ensure pip itself is available (critical for Microsoft Store Python)
+    # First command: bootstrap pip via ensurepip (critical for Microsoft Store Python)
+    # ensurepip is a stdlib module that installs pip without needing pip already present
+    ensurepip_bootstrap = Command(
+        stage="ensurepip-bootstrap",
+        argv=(sys.executable, "-m", "ensurepip", "--user", "--upgrade"),
+    )
+    # Second command: ensure pip itself is available from local wheelhouse
     pip_wheel = sorted((root / "wheelhouse").glob("pip-*.whl"))
     if not pip_wheel:
         raise RuntimeError("pip wheel not found in wheelhouse")
@@ -74,11 +80,22 @@ def build_pip_commands(
         stage="components",
         argv=(*common, "--no-deps", "--force-reinstall", *wheels),
     )
-    return ensure_pip, dependencies, components
+    return ensurepip_bootstrap, ensure_pip, dependencies, components
 
 
 def run_pip_in_process(arguments: tuple[str, ...]) -> int:
     """Invoke pip without a child process for restricted Python FELLES hosts."""
+    # First ensure pip is available via ensurepip (critical for Microsoft Store Python)
+    try:
+        import subprocess
+        subprocess.run(
+            (sys.executable, "-m", "ensurepip", "--user", "--upgrade"),
+            check=False,
+            stdin=subprocess.DEVNULL,
+        )
+    except Exception:
+        pass  # Ignore failures; pip might already be available
+    
     from pip._internal.cli.main import main as pip_main
 
     return pip_main(list(arguments))
