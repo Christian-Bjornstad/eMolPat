@@ -44,10 +44,5 @@
       "description_nb": "Evidensgjennomgang for JAK2, CALR og MPL."
     }
   ],
-  "files": [
-    {
-      "path": "requirements.lock",
-      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    }
-  ]
+  "files": []
 }
