@@ -14,6 +14,7 @@ MODULE = ModuleSpec(
     entry_point="hemafrag_diagnostics.__main__:main",
     icon="icons/hemafrag.svg",
     description_nb="Fragmentanalyse",
+    description_en="Fragment analysis diagnostics",
 )
 
 
