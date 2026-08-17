@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "suite_version": "1.0.4-python314-test",
+  "suite_version": "1.0.5",
   "python_requires": ">=3.14,<3.15",
   "modules": [
     {
@@ -44,10 +44,5 @@
       "description_nb": "Evidensgjennomgang for JAK2, CALR og MPL."
     }
   ],
-  "files": [
-    {
-      "path": "requirements.lock",
-      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    }
-  ]
+  "files": []
 }
