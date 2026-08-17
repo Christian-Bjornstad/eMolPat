@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Comprehensive diagnostic script for cross-machine health check differences"""
+"""Enhanced diagnostic script for eMolPat health check - works from any directory"""
 
 import json
 import os
@@ -20,218 +20,262 @@ def print_section(title):
     print(f"{title}")
     print(f"{'='*60}")
 
-def get_install_record_info(record):
-    if record is None:
-        return "No install record found"
+def redact_path(text: str) -> str:
+    """Redact user-specific paths for privacy"""
+    if not text:
+        return text
     
-    info = f"""Install Record:
-  Suite Version: {record.suite_version}
-  Manifest SHA256: {record.manifest_sha256}
-  Verified At: {record.verified_at}
-  Modules:
-"""
-    for module in record.modules:
-        info += f"    - {module.distribution}=={module.version} (import: {module.import_name})\n"
-    return info
+    # Replace common user path patterns
+    replacements = [
+        (os.environ.get('USERNAME', 'user'), '<USER>'),
+        (os.environ.get('USERPROFILE', ''), '<USERPROFILE>'),
+        (os.environ.get('LOCALAPPDATA', ''), '<LOCALAPPDATA>'),
+        (os.environ.get('APPDATA', ''), '<APPDATA>'),
+    ]
+    
+    for old, new in replacements:
+        if old and old in text:
+            text = text.replace(old, new)
+    
+    return text
 
-def get_manifest_info(manifest):
-    if manifest is None:
-        return "No manifest found"
+def get_bundled_manifest():
+    """Get the bundled manifest from the portal package"""
+    try:
+        from importlib.resources import files, as_file
+        resource = files("emolpat.ui.resources").joinpath("suite-manifest.json")
+        with as_file(resource) as manifest_path:
+            return load_manifest(manifest_path)
+    except Exception as e:
+        print(f"Error loading bundled manifest: {e}")
+        return None
+
+def get_network_manifest():
+    """Get the network release manifest if available"""
+    release_root = os.environ.get("EMOLPAT_RELEASE_ROOT")
+    if not release_root:
+        return None
     
-    info = f"""Manifest:
-  Schema Version: {manifest.schema_version}
-  Suite Version: {manifest.suite_version}
-  Python Requires: {manifest.python_requires}
-  Modules:
-"""
-    for module in manifest.modules:
-        info += f"    - {module.id}: {module.distribution}=={module.version} (import: {module.import_name})\n"
-    return info
+    manifest_path = Path(release_root) / "manifest.json"
+    if not manifest_path.exists():
+        return None
+    
+    try:
+        return load_manifest(manifest_path)
+    except Exception as e:
+        print(f"Error loading network manifest: {e}")
+        return None
+
+def get_retained_manifest(record: InstallRecord | None, paths: UserPaths):
+    """Get the retained local manifest if available"""
+    if not record:
+        return None
+    
+    retained_path = paths.rollback / record.suite_version / "manifest.json"
+    if not retained_path.exists():
+        return None
+    
+    try:
+        return load_manifest(retained_path)
+    except Exception as e:
+        print(f"Error loading retained manifest: {e}")
+        return None
 
 def print_machine_info():
     print_section("Current Machine Diagnostic Information")
     
     print(f"Python Version: {sys.version}")
-    print(f"Python Executable: {sys.executable}")
-    print(f"Current Working Directory: {os.getcwd()}")
+    print(f"Python Executable: {redact_path(sys.executable)}")
+    print(f"Current Working Directory: {redact_path(os.getcwd())}")
     
-    # Check LOCALAPPDATA
-    localappdata = os.environ.get("LOCALAPPDATA")
-    print(f"LOCALAPPDATA: {localappdata}")
-    
-    # Check USERPROFILE
-    userprofile = os.environ.get("USERPROFILE")
-    print(f"USERPROFILE: {userprofile}")
-    
-    # Check HOMEPATH/HOMEUSERPROFILE
-    homepath = os.environ.get("HOMEPATH")
-    homeuserprofile = os.environ.get("HOMEDRIVE") + os.environ.get("HOMEPATH", "")
-    print(f"HOMEPATH: {homepath}")
-    print(f"HOMEUSERPROFILE: {homeuserprofile}")
-    
-    # Try to find the install record path
-    possible_paths = [
-        Path(localappdata) / "eMolPat" / "install-record.json" if localappdata else None,
-        Path(userprofile) / "AppData" / "Local" / "eMolPat" / "install-record.json" if userprofile else None,
-        Path.home() / "AppData" / "Local" / "eMolPat" / "install-record.json",
-        Path.cwd() / "eMolPat" / "install-record.json",
-        Path.cwd().parent / "eMolPat" / "install-record.json",
-    ]
-    
-    print(f"\nLooking for install-record.json in:")
-    for path in possible_paths:
-        if path is None:
-            continue
-        exists = path.exists()
-        print(f"  {path} - {'EXISTS' if exists else 'NOT FOUND'}")
-        
-        if exists:
-            try:
-                # Try to read the install record
-                with open(path, 'r') as f:
-                    content = json.load(f)
-                print(f"    Content: {json.dumps(content, indent=4)}")
-            except Exception as e:
-                print(f"    Error reading: {e}")
+    # Check environment variables
+    env_vars = ['LOCALAPPDATA', 'USERPROFILE', 'APPDATA', 'EMOLPAT_RELEASE_ROOT']
+    for var in env_vars:
+        value = os.environ.get(var)
+        if value:
+            print(f"{var}: {redact_path(value)}")
+        else:
+            print(f"{var}: NOT SET")
 
-def print_health_check_details(record, manifest, health_report):
-    print_section("Health Check Details")
+def check_install_record(paths: UserPaths):
+    """Check and load install record"""
+    print_section("Install Record Check")
     
-    if health_report is None:
-        print("No health report generated")
-        return
+    install_record_path = paths.install_record
+    print(f"Expected location: {redact_path(str(install_record_path))}")
+    print(f"Exists: {install_record_path.exists()}")
     
-    print(f"Health Report State: {health_report.state}")
-    print(f"Suite Version: {health_report.suite_version}")
-    print(f"Issues: {len(health_report.issues)}")
+    if not install_record_path.exists():
+        print("❌ No install record found")
+        return None
     
-    if health_report.issues:
-        print("\nDetailed Issues:")
-        for issue in health_report.issues:
-            print(f"  - {issue}")
-    
-    # Show module status
-    if record:
-        print(f"\nModule Status Check:")
-        for module in record.modules:
-            # Check if module is importable
-            importable = module_available(module.import_name)
-            print(f"  - {module.distribution}=={module.version} (import: {module.import_name}) - {'IMPORTABLE' if importable else 'NOT IMPORTABLE'}")
-            
-            # Try to get version
-            try:
-                from importlib.metadata import version
-                actual_version = version(module.distribution)
-                print(f"    Expected: {module.version}, Actual: {actual_version}, Match: {actual_version == module.version}")
-            except Exception as e:
-                print(f"    Error getting version: {e}")
-
-def main():
-    print_section("eMolPat Cross-Machine Health Check Diagnostic")
-    
-    # Print machine information
-    print_machine_info()
-    
-    # Try to locate the install record
-    possible_record_paths = []
-    localappdata = os.environ.get("LOCALAPPDATA")
-    if localappdata:
-        possible_record_paths.append(Path(localappdata) / "eMolPat" / "install-record.json")
-    
-    userprofile = os.environ.get("USERPROFILE")
-    if userprofile:
-        possible_record_paths.append(Path(userprofile) / "AppData" / "Local" / "eMolPat" / "install-record.json")
-    
-    possible_record_paths.append(Path.home() / "AppData" / "Local" / "eMolPat" / "install-record.json")
-    
-    # Load install record
-    record = None
-    for path in possible_record_paths:
-        if path.exists():
-            print_section(f"Found install record at: {path}")
-            try:
-                record = read_install_record(path)
-                print(f"Successfully loaded install record")
-                print(record)
-                break
-            except Exception as e:
-                print(f"Error loading install record: {e}")
-                record = None
-    
-    if record is None:
-        print("\n❌ No install record found on this machine")
-        return
-    
-    # Try to locate the manifest
-    # First try to get it from the record if possible
-    # This is tricky because the record doesn't store the full path
-    
-    # Try common locations
-    manifest_candidates = [
-        Path.cwd() / "release" / "manifest.json",
-        Path.cwd().parent / "release" / "manifest.json",
-        Path.cwd() / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json",
-        Path(localappdata) / "eMolPat" / "release" / "manifest.json" if localappdata else None,
-        Path(userprofile) / "AppData" / "Local" / "eMolPat" / "release" / "manifest.json" if userprofile else None,
-    ]
-    
-    manifest = None
-    manifest_path = None
-    
-    for candidate in manifest_candidates:
-        if candidate is None or not Path(candidate).exists():
-            continue
-            
-        try:
-            manifest = load_manifest(Path(candidate))
-            manifest_path = candidate
-            print_section(f"Trying manifest at: {candidate}")
-            print(f"Successfully loaded manifest: suite_version={manifest.suite_version}")
-            print(f"Modules: {[m.id for m in manifest.modules]}")
-            break
-        except Exception as e:
-            print(f"Error loading manifest: {e}")
-            continue
-    
-    if manifest is None:
-        print("\n❌ Could not load manifest")
-        return
-    
-    # Run health check
-    print_section("Running Health Check")
     try:
-        # Use environment variables to construct UserPaths
-        paths = UserPaths.from_environment(os.environ)
-        print(f"UserPaths: {paths}")
+        record = read_install_record(install_record_path)
+        print("✅ Install record loaded successfully")
+        print(f"Suite version: {record.suite_version}")
+        print(f"Verified at: {record.verified_at}")
+        print(f"Manifest SHA256: {record.manifest_sha256[:16]}...")
         
-        health_report = probe_health(manifest, paths)
-        print_health_check_details(record, manifest, health_report)
+        print("\nModules:")
+        for module in record.modules:
+            print(f"  - {module.distribution}=={module.version} (import: {module.import_name})")
         
+        return record
     except Exception as e:
-        print(f"Error during health check: {e}")
+        print(f"❌ Error reading install record: {e}")
+        return None
+
+def check_manifests(record: InstallRecord | None, paths: UserPaths):
+    """Check all available manifests"""
+    print_section("Manifest Sources")
+    
+    # 1. Bundled manifest
+    print("\n1. BUNDLED PORTAL MANIFEST:")
+    bundled = get_bundled_manifest()
+    if bundled:
+        print(f"  ✅ Version: {bundled.suite_version}")
+        print(f"  Modules: {[m.id for m in bundled.modules]}")
+    else:
+        print("  ❌ Could not load")
+    
+    # 2. Network manifest
+    print("\n2. NETWORK RELEASE MANIFEST:")
+    network = get_network_manifest()
+    if network:
+        print(f"  ✅ Version: {network.suite_version}")
+        print(f"  Path: {redact_path(os.environ.get('EMOLPAT_RELEASE_ROOT', 'NOT SET'))}")
+    else:
+        print("  ❌ Not available or EMOLPAT_RELEASE_ROOT not set")
+    
+    # 3. Retained manifest
+    print("\n3. RETAINED LOCAL MANIFEST:")
+    retained = get_retained_manifest(record, paths)
+    if retained:
+        print(f"  ✅ Version: {retained.suite_version}")
+        print(f"  Path: {redact_path(str(paths.rollback / record.suite_version))}")
+    else:
+        print("  ❌ Not available")
+    
+    return bundled, network, retained
+
+def check_module_status(record: InstallRecord | None):
+    """Check if modules are importable and versions match"""
+    print_section("Module Status Check")
+    
+    if not record:
+        print("❌ No install record - cannot check modules")
+        return
+    
+    print("Checking distribution versions and imports:\n")
+    
+    all_ok = True
+    for module in record.modules:
+        # Check import
+        importable = module_available(module.import_name)
+        
+        # Check version
+        try:
+            from importlib.metadata import version
+            actual_version = version(module.distribution)
+            version_match = actual_version == module.version
+        except Exception as e:
+            actual_version = f"ERROR: {e}"
+            version_match = False
+        
+        status = "✅" if (importable and version_match) else "❌"
+        print(f"{status} {module.distribution}")
+        print(f"    Expected: {module.version}, Actual: {actual_version}")
+        print(f"    Import: {'OK' if importable else 'FAILED'}")
+        
+        if not (importable and version_match):
+            all_ok = False
+    
+    return all_ok
+
+def run_health_check(manifest: SuiteManifest, paths: UserPaths):
+    """Run the actual health check"""
+    print_section("Health Check Result")
+    
+    try:
+        health_report = probe_health(manifest, paths)
+        
+        print(f"State: {health_report.state}")
+        print(f"Suite version: {health_report.suite_version}")
+        
+        if health_report.issues:
+            print(f"\nIssues ({len(health_report.issues)}):")
+            for issue in health_report.issues:
+                print(f"  - {issue}")
+        else:
+            print("\n✅ No issues detected")
+        
+        return health_report
+    except Exception as e:
+        print(f"❌ Error running health check: {e}")
         import traceback
         traceback.print_exc()
+        return None
+
+def main():
+    print_section("eMolPat Enhanced Health Check Diagnostic")
+    print("This script works from any directory, including Citrix environments")
+    
+    # Print machine info
+    print_machine_info()
+    
+    # Get paths
+    try:
+        paths = UserPaths.from_environment(os.environ)
+        print(f"\nUserPaths root: {redact_path(str(paths.root))}")
+    except Exception as e:
+        print(f"\n❌ Error creating UserPaths: {e}")
+        return
+    
+    # Check install record
+    record = check_install_record(paths)
+    
+    # Check manifests
+    bundled, network, retained = check_manifests(record, paths)
+    
+    # Check module status
+    modules_ok = check_module_status(record)
+    
+    # Run health check using bundled manifest (same as portal)
+    if bundled:
+        health_report = run_health_check(bundled, paths)
+    else:
+        print("\n❌ Cannot run health check - no bundled manifest available")
+        health_report = None
     
     # Print summary
     print_section("Summary")
+    
     if health_report:
         if health_report.state == SuiteState.READY:
-            print("✅ Machine health check PASSED - Suite is ready")
+            print("✅ PASS - Suite is ready")
+            print("   Portal should display: 'Klar til bruk'")
+            print("   All application cards should be enabled")
         elif health_report.state == SuiteState.UPDATE_AVAILABLE:
-            print("⚠️  Machine health check shows UPDATE AVAILABLE")
+            print("⚠️  UPDATE AVAILABLE - Newer version detected")
         elif health_report.state == SuiteState.REPAIR_REQUIRED:
-            print("❌ Machine health check shows REPAIR REQUIRED")
+            print("❌ REPAIR REQUIRED - Issues detected")
+            print("   Portal will display: 'Ikke klar'")
+            print("   Application cards will be disabled")
         elif health_report.state == SuiteState.NOT_INSTALLED:
-            print("❌ Machine health check shows NOT INSTALLED")
+            print("❌ NOT INSTALLED - No valid install record")
         elif health_report.state == SuiteState.UNAVAILABLE:
-            print("❌ Machine health check shows UNAVAILABLE")
+            print("❌ UNAVAILABLE - System error")
         
         if health_report.issues:
-            print("\nIssues found:")
+            print(f"\nAction required: Fix the following issues:")
             for issue in health_report.issues:
                 print(f"  - {issue}")
     else:
-        print("❌ No health report was generated")
+        print("❌ FAIL - Could not complete health check")
+    
+    print("\n" + "="*60)
+    print("Diagnostic complete")
+    print("="*60)
 
 if __name__ == "__main__":
     main()

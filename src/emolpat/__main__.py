@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 import os
+import sys
 from importlib.resources import as_file, files
 
 from emolpat.domain import HealthReport, SuiteManifest
@@ -59,6 +61,31 @@ def main() -> int:
     manifest = bundled_manifest()
     health = probe_health(manifest, paths)
     release_root = find_release_root(paths, os.environ)
+    
+    # Diagnostic logging for health state
+    logging.info("=" * 60)
+    logging.info("eMolPat Portal Health Check")
+    logging.info("=" * 60)
+    logging.info(f"Python version: {sys.version}")
+    logging.info(f"Python executable: {sys.executable}")
+    logging.info(f"Bundled manifest version: {manifest.suite_version}")
+    logging.info(f"Install record version: {health.suite_version}")
+    logging.info(f"Health state: {health.state}")
+    
+    if health.issues:
+        logging.warning(f"Health issues detected:")
+        for issue in health.issues:
+            logging.warning(f"  - {issue}")
+    else:
+        logging.info("No health issues detected")
+    
+    # Log module status
+    logging.info("Module status:")
+    for module in manifest.modules:
+        logging.info(f"  {module.id}: {module.distribution}=={module.version}")
+    
+    logging.info("=" * 60)
+    
     return run_application_loop(InstalledPortal(manifest, health, paths, release_root))
 
 
