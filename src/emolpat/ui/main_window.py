@@ -1,4 +1,4 @@
-"""Main eMolPat portal window."""
+"""Main eMolPat portal window with English UI and modern design."""
 
 from __future__ import annotations
 
@@ -19,58 +19,209 @@ from PyQt6.QtWidgets import (
 )
 
 from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
-from emolpat.ui.translations import (
-    INSTALL_COMPLETE_TEXT,
-    INSTALL_STAGE_TEXT,
-    NAVIGATION,
-    STATE_TEXT,
-)
+from emolpat.ui.translations import INSTALL_COMPLETE_TEXT, INSTALL_STAGE_TEXT, NAVIGATION, STATE_TEXT
 from emolpat.ui.widgets import ApplicationCard, StatusBanner, placeholder_page
 
-STYLESHEET = """
-QMainWindow, QWidget#shell { background: #f4f7f8; color: #17393b; }
-QFrame#sidebar { background: #073f43; border: 0; }
-QLabel#brand { color: white; font-size: 25px; font-weight: 700; }
-QLabel#brandSubtitle, QLabel#versionLabel { color: #b7d4d4; font-size: 12px; }
-QPushButton#navigationButton { color: #d9e9e9; background: transparent; border: 0;
-  border-radius: 6px; padding: 11px 14px; text-align: left; font-weight: 600; }
-QPushButton#navigationButton:hover { background: #125258; color: white; }
-QPushButton#navigationButton:checked { background: #e4f2f0; color: #073f43; }
-QPushButton#navigationButton:focus { border: 2px solid #8fd0ca; }
-QLabel#pageTitle { color: #12383b; font-size: 25px; font-weight: 700; }
-QLabel#pageIntro { color: #567174; font-size: 14px; }
-QLabel#aboutCreator { color: #12383b; font-size: 14px; font-weight: 700; }
-QFrame#statusBanner { background: #fff7e6; border: 1px solid #e6c66a;
-  border-radius: 7px; }
-QFrame#statusBanner[ready="true"] { background: #e8f5ef; border-color: #9acdb5; }
-QLabel#statusSymbol { background: #a16909; color: white; border-radius: 11px;
-  min-width: 22px; max-width: 22px; min-height: 22px; max-height: 22px;
-  font-weight: 700; }
-QFrame#statusBanner[ready="true"] QLabel#statusSymbol { background: #247a56; }
-QLabel#statusTitle { color: #17393b; font-weight: 700; }
-QLabel#statusDetail { color: #4b686a; }
-QFrame#applicationCard { background: white; border: 1px solid #d6e0e1;
-  border-radius: 9px; }
-QFrame#applicationCard:hover { border-color: #87aaa9; }
-QLabel#installProgress { background: #e8f2f3; color: #17393b;
-  border: 1px solid #9ebfc0; border-radius: 6px; padding: 10px 14px;
-  font-weight: 600; }
-QLabel#systemIssues { color: #567174; font-size: 13px; }
-QLabel#moduleName { color: #12383b; font-size: 17px; font-weight: 700; }
-QLabel#moduleVersion { color: #6b8183; font-size: 12px; }
-QLabel#moduleDescription { color: #4b6264; font-size: 13px; }
-QLabel#moduleStatus { color: #9a6309; font-size: 12px; font-weight: 600; }
-QLabel#moduleStatus[ready="true"] { color: #247a56; }
-QPushButton#primaryButton { background: #0c6669; color: white; border: 0;
-  border-radius: 6px; padding: 0 18px; font-weight: 700; }
-QPushButton#primaryButton:hover { background: #084f52; }
-QPushButton#primaryButton:focus { border: 2px solid #8fd0ca; }
-QPushButton#primaryButton:disabled { background: #b7c3c4; color: #f5f7f7; }
-QScrollArea { border: 0; background: transparent; }
-QWidget#cardsContainer, QScrollArea QWidget#qt_scrollarea_viewport {
-  background: #f4f7f8;
+STYLESHEET = """/* eMolPat Portal - Modern English Frontend Design */
+ 
+/* Color Palette:
+   Primary: #1A1F2E (deep midnight blue - trust, professionalism)
+   Secondary: #2E86AB (calm teal accent - clinical, clean)
+   Accent: #F18F01 (warm amber - highlights, CTA)
+   Success: #4CAF50 (green - positive results)
+   Warning: #FF9800 (orange - attention needed)
+   Neutral: #F5F6FA (light surface - readability)
+*/
+
+QMainWindow, QWidget#shell { 
+    background: #1A1F2E; 
+    color: #F5F6FA; 
+}
+
+/* Sidebar */
+QFrame#sidebar { 
+    background: #073F43; 
+    border: 0; 
+}
+
+/* Brand */
+QLabel#brand { 
+    color: white; 
+    font-size: 28px; 
+    font-weight: 700; 
+}
+
+/* Subtle accents */
+QLabel#brandSubtitle, QLabel#versionLabel { 
+    color: #B7D4D4; 
+    font-size: 12px; 
+}
+
+/* Navigation Buttons */
+QPushButton#navigationButton { 
+    color: #D9E9E9; 
+    background: transparent; 
+    border: 0; 
+    border-radius: 6px; 
+    padding: 11px 14px; 
+    text-align: left; 
+    font-weight: 600; 
+}
+QPushButton#navigationButton:hover { 
+    background: #125258; 
+    color: white; 
+}
+QPushButton#navigationButton:checked { 
+    background: #E4F2F0; 
+    color: #073F43; 
+}
+QPushButton#navigationButton:focus { 
+    border: 2px solid #8FD0CA; 
+    background: #E4F2F0; 
+}
+
+/* Page Titles */
+QLabel#pageTitle { 
+    color: #12383B; 
+    font-size: 25px; 
+    font-weight: 700; 
+}
+
+/* Page Intro */
+QLabel#pageIntro { 
+    color: #567174; 
+    font-size: 14px; 
+}
+
+/* About Creator */
+QLabel#aboutCreator { 
+    color: #12383B; 
+    font-size: 14px; 
+    font-weight: 700; 
+}
+
+/* Status Banner */
+QFrame#statusBanner { 
+    background: #FFF7E6; 
+    border: 1px solid #E6C66A; 
+    border-radius: 7px; 
+    min-height: 32px; 
+}
+QFrame#statusBanner[ready="true"] { 
+    background: #E8F5EF; 
+    border-color: #9ACDB5; 
+}
+QLabel#statusSymbol { 
+    background: #F18F01; 
+    color: white; 
+    border-radius: 11px; 
+    min-width: 22px; max-width: 22px; 
+    min-height: 22px; max-height: 22px; 
+    font-weight: 700; 
+}
+QFrame#statusBanner[ready="true"] QLabel#statusSymbol { 
+    background: #247A56; 
+}
+
+/* Status text */
+QLabel#statusTitle { 
+    color: #17393B; 
+    font-weight: 700; 
+}
+QLabel#statusDetail { 
+    color: #4B686A; 
+}
+
+/* Application Cards */
+QFrame#applicationCard { 
+    background: white; 
+    border: 1px solid #D6E0E1; 
+    border-radius: 12px; 
+    margin: 8px 0; 
+}
+QFrame#applicationCard:hover { 
+    border-color: #87AAA9; 
+    background: #F8FCFC; 
+}
+QFrame#applicationCard:focus-within { 
+    border-color: #2E86AB; 
+    outline: 2px solid #2E86AB; 
+}
+
+/* Install Progress */
+QLabel#installProgress { 
+    background: #E8F2F3; 
+    color: #17393B; 
+    border: 1px solid #9EbfC0; 
+    border-radius: 6px; 
+    padding: 10px 14px; 
+    font-weight: 600; 
+}
+
+/* Module Name/Version */
+QLabel#moduleName { 
+    color: #12383B; 
+    font-size: 17px; 
+    font-weight: 700; 
+}
+QLabel#moduleVersion { 
+    color: #6B8183; 
+    font-size: 12px; 
+}
+QLabel#moduleDescription { 
+    color: #4B6264; 
+    font-size: 13px; 
+}
+
+/* Module Status */
+QLabel#moduleStatus { 
+    color: #9A6309; 
+    font-size: 12px; 
+    font-weight: 600; 
+}
+QLabel#moduleStatus[ready="true"] { 
+    color: #247A56; 
+}
+
+/* Primary Buttons */
+QPushButton#primaryButton { 
+    background: #0C6669; 
+    color: white; 
+    border: 0; 
+    border-radius: 6px; 
+    padding: 0 18px; 
+    font-weight: 700; 
+}
+QPushButton#primaryButton:hover { 
+    background: #084F52; 
+}
+QPushButton#primaryButton:focus { 
+    border: 2px solid #8FD0CA; 
+}
+QPushButton#primaryButton:disabled { 
+    background: #B7C3C4; 
+    color: #F5F7F7; 
+}
+
+/* Scroll Area */
+QScrollArea { 
+    border: 0; 
+    background: transparent; 
+}
+QWidget#cardsContainer, QScrollArea QWidget#qt_scrollarea_viewport { 
+    background: #F5F6FA; 
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    QPushButton#navigationButton:hover,
+    QFrame#applicationCard:hover,
+    QPushButton#primaryButton:hover {
+        transition: none !important;
+    }
 }
 """
+
 
 
 class MainWindow(QMainWindow):
@@ -93,9 +244,9 @@ class MainWindow(QMainWindow):
         self.application_cards: list[ApplicationCard] = []
         self.navigation_buttons: list[QPushButton] = []
         self.setWindowTitle(f"eMolPat {manifest.suite_version}")
-        self.setAccessibleName("eMolPat programportal")
+        self.setAccessibleName("eMolPat program portal")
         self.setMinimumSize(980, 700)
-        self.resize(1180, 780)
+        self.resize(1200, 800)
         self.setStyleSheet(STYLESHEET)
         self._build_ui()
 
@@ -123,21 +274,21 @@ class MainWindow(QMainWindow):
     def _build_sidebar(self) -> QFrame:
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(224)
+        sidebar.setFixedWidth(240)
         layout = QVBoxLayout(sidebar)
-        layout.setContentsMargins(22, 28, 22, 22)
-        layout.setSpacing(8)
+        layout.setContentsMargins(28, 32, 28, 28)
+        layout.setSpacing(12)
 
         brand = QLabel("eMolPat")
         brand.setObjectName("brand")
-        subtitle = QLabel("Molekylærpatologi")
+        subtitle = QLabel("Molecular Pathology Portal")
         subtitle.setObjectName("brandSubtitle")
-        self.version_label = QLabel(f"Versjon {self.manifest.suite_version}")
+        self.version_label = QLabel(f"Version {self.manifest.suite_version}")
         self.version_label.setObjectName("versionLabel")
         layout.addWidget(brand)
         layout.addWidget(subtitle)
         layout.addWidget(self.version_label)
-        layout.addSpacing(26)
+        layout.addSpacing(28)
 
         group = QButtonGroup(self)
         group.setExclusive(True)
@@ -154,13 +305,14 @@ class MainWindow(QMainWindow):
             self.navigation_buttons.append(button)
         self.navigation_buttons[0].setChecked(True)
         layout.addStretch(1)
-        self.about_button = QPushButton("Om eMolPat")
+
+        self.about_button = QPushButton("About eMolPat")
         self.about_button.setObjectName("navigationButton")
         self.about_button.setCheckable(True)
         self.about_button.setMinimumHeight(44)
-        self.about_button.setAccessibleName("Om eMolPat")
+        self.about_button.setAccessibleName("About eMolPat")
         self.about_button.setAccessibleDescription(
-            "Les om eMolPat, analyseverktøyene og utvikleren"
+            "About eMolPat, the analysis tools, and the developer"
         )
         self.about_button.clicked.connect(
             lambda _checked: self.pages.setCurrentWidget(self.about_page)
@@ -173,28 +325,30 @@ class MainWindow(QMainWindow):
     def _build_content(self) -> QWidget:
         container = QWidget()
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(34, 28, 34, 28)
-        layout.setSpacing(12)
+        layout.setContentsMargins(36, 32, 36, 32)
+        layout.setSpacing(16
+        )
         self.install_progress = QLabel()
         self.install_progress.setObjectName("installProgress")
-        self.install_progress.setAccessibleName("Installasjonsstatus")
+        self.install_progress.setAccessibleName("Installation status")
         self.install_progress.hide()
         layout.addWidget(self.install_progress)
+
         self.pages = QStackedWidget()
         self.pages.addWidget(self._build_applications_page())
         self.system_status_page = self._build_system_status_page()
         self.pages.addWidget(self.system_status_page)
         self.pages.addWidget(
             placeholder_page(
-                "Oppdater eMolPat",
-                "Oppdatering installerer alltid portal og alle fire programmer samlet.",
-                "Se etter oppdatering",
+                "Update eMolPat",
+                "The update always installs the portal and all four applications together.",
+                "Check for update",
             )
         )
         self.pages.addWidget(
             placeholder_page(
-                "Hjelp og støtte",
-                "Ved feil kan teknisk støtte bruke eMolPat-loggen. Ingen kliniske data logges.",
+                "Help & Support",
+                "Technical support can use the eMolPat log. No clinical data is logged.",
             )
         )
         self.about_page = self._build_about_page()
@@ -206,8 +360,8 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
-        title = QLabel("Systemstatus")
+        layout.setSpacing(18)
+        title = QLabel("System Status")
         title.setObjectName("pageTitle")
         self.system_summary = QLabel()
         self.system_summary.setObjectName("pageIntro")
@@ -218,7 +372,7 @@ class MainWindow(QMainWindow):
         self.install_button = QPushButton()
         self.install_button.setObjectName("primaryButton")
         self.install_button.setMinimumHeight(44)
-        self.install_button.setAccessibleName("Installer eller reparer eMolPat")
+        self.install_button.setAccessibleName("Install or repair eMolPat")
         self.install_button.clicked.connect(self._request_install)
         layout.addWidget(title)
         layout.addWidget(self.system_summary)
@@ -235,20 +389,20 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
+        layout.setSpacing(16
 
-        title = QLabel("Om eMolPat")
+        )
+        title = QLabel("About eMolPat")
         title.setObjectName("pageTitle")
         description = QLabel(
-            "eMolPat er en samlet portal for molekylærpatologiske "
-            "analyseverktøy. Portalen gir enkel tilgang til HemaFrag "
-            "Diagnostics, IGH Merge, VPM / HTS Tolkning og MPN Tolkning, "
-            "samtidig som hvert program fortsetter å kjøre som et "
-            "selvstendig verktøy."
+            "eMolPat is a unified portal for molecular pathology applications. "
+            "The portal provides simple access to HemaFrag Diagnostics, IGH Merge, "
+            "VPM / HTS Tolkning and MPN Tolkning, while each program continues "
+            "to run as an independent tool."
         )
         description.setObjectName("pageIntro")
         description.setWordWrap(True)
-        creator = QLabel("Utviklet av Christian Bjørnstad")
+        creator = QLabel("Developed by Christian Bjørnstad")
         creator.setObjectName("aboutCreator")
 
         layout.addWidget(title)
@@ -261,10 +415,11 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(16)
-        title = QLabel("Programmer")
+        layout.setSpacing(20
+        )
+        title = QLabel("Applications")
         title.setObjectName("pageTitle")
-        intro = QLabel("Velg analyseprogrammet du vil åpne.")
+        intro = QLabel("Select the analysis application you want to open.")
         intro.setObjectName("pageIntro")
 
         ready = self.health.state is SuiteState.READY
@@ -272,12 +427,12 @@ class MainWindow(QMainWindow):
         self.status_banner = StatusBanner(status_title, status_detail, ready)
 
         heading_copy = QVBoxLayout()
-        heading_copy.setSpacing(6)
+        heading_copy.setSpacing(8)
         heading_copy.addWidget(title)
         heading_copy.addWidget(intro)
 
         heading = QHBoxLayout()
-        heading.setSpacing(20)
+        heading.setSpacing(24)
         heading.addLayout(heading_copy, 1)
         heading.addWidget(
             self.status_banner,
@@ -289,8 +444,9 @@ class MainWindow(QMainWindow):
         cards.setObjectName("cardsContainer")
         grid = QGridLayout(cards)
         grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(16)
-        grid.setVerticalSpacing(16)
+        grid.setHorizontalSpacing(20)
+        grid.setVerticalSpacing(20)
+
         for index, module in enumerate(self.manifest.modules):
             card = ApplicationCard(module, enabled=ready)
             card.open_button.clicked.connect(
@@ -314,9 +470,9 @@ class MainWindow(QMainWindow):
         self.system_summary.setText(f"{title}. {detail}")
         self.system_issues.setText("\n".join(self.health.issues))
         action_text = {
-            SuiteState.NOT_INSTALLED: "Installer programmer",
-            SuiteState.REPAIR_REQUIRED: "Reparer installasjon",
-            SuiteState.UPDATE_AVAILABLE: "Oppdater eMolPat",
+            SuiteState.NOT_INSTALLED: "Install applications",
+            SuiteState.REPAIR_REQUIRED: "Repair installation",
+            SuiteState.UPDATE_AVAILABLE: "Update eMolPat",
         }.get(self.health.state)
         self.install_button.setText(action_text or "")
         self.install_button.setVisible(bool(action_text and self.release_available))
@@ -345,7 +501,7 @@ class MainWindow(QMainWindow):
             self.close()
             return
         self.install_progress.setText(
-            f"Installasjonen stoppet under: {INSTALL_STAGE_TEXT[result.stage]}"
+            f"Installation stopped at: {INSTALL_STAGE_TEXT[result.stage]}"
         )
         self.install_progress.show()
 
