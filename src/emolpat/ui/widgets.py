@@ -1,4 +1,4 @@
-"""Focused reusable widgets for the eMolPat portal."""
+"""Focused reusable widgets for the eMolPat portal with English text and modern design."""
 
 from __future__ import annotations
 
@@ -38,12 +38,12 @@ class StatusBanner(QFrame):
         super().__init__()
         self.setObjectName("statusBanner")
         self.setProperty("ready", ready)
-        self.setMaximumWidth(220)
+        self.setMaximumWidth(240)
 
         symbol = QLabel("✓" if ready else "!")
         symbol.setObjectName("statusSymbol")
         symbol.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        symbol.setAccessibleName("Godkjent" if ready else "Krever handling")
+        symbol.setAccessibleName("Approved" if ready else "Action required")
 
         self.title_label = QLabel(title)
         self.title_label.setObjectName("statusTitle")
@@ -53,8 +53,8 @@ class StatusBanner(QFrame):
         self.detail_label.hide()
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 8, 12, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(12, 10, 14, 10)
+        layout.setSpacing(10)
         layout.addWidget(symbol)
         layout.addWidget(self.title_label)
 
@@ -77,7 +77,7 @@ class ApplicationCard(QFrame):
         self.module_id = module.id
         self.module_icon = module_icon(module.id)
         self.setObjectName("applicationCard")
-        self.setAccessibleName(f"{module.name}, versjon {module.version}")
+        self.setAccessibleName(f"{module.name}, version {module.version}")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setMinimumSize(280, 218)
 
@@ -92,11 +92,11 @@ class ApplicationCard(QFrame):
             )
         )
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setAccessibleName(f"Ikon for {module.name}")
+        icon_label.setAccessibleName(f"Icon for {module.name}")
 
         name = QLabel(module.name)
         name.setObjectName("moduleName")
-        version = QLabel(f"Versjon {module.version}")
+        version = QLabel(f"Version {module.version}")
         version.setObjectName("moduleVersion")
         heading = QVBoxLayout()
         heading.setSpacing(2)
@@ -104,21 +104,21 @@ class ApplicationCard(QFrame):
         heading.addWidget(version)
 
         top = QHBoxLayout()
-        top.setSpacing(14)
+        top.setSpacing(16)
         top.addWidget(icon_label)
         top.addLayout(heading, 1)
 
-        description = QLabel(module.description_nb)
+        description = QLabel(module.description_en)
         description.setObjectName("moduleDescription")
         description.setWordWrap(True)
 
         self.status_label = QLabel()
         self.status_label.setObjectName("moduleStatus")
 
-        self.open_button = QPushButton("Åpne program")
+        self.open_button = QPushButton("Open application")
         self.open_button.setObjectName("primaryButton")
         self.open_button.setMinimumHeight(44)
-        self.open_button.setAccessibleName(f"Åpne {module.name}")
+        self.open_button.setAccessibleName(f"Open {module.name}")
         self.module_name = module.name
         self.set_enabled(enabled)
 
@@ -128,19 +128,19 @@ class ApplicationCard(QFrame):
         footer.addWidget(self.open_button)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 18, 20, 18)
-        layout.setSpacing(12)
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(16)
         layout.addLayout(top)
         layout.addWidget(description)
         layout.addStretch(1)
         layout.addLayout(footer)
 
     def set_enabled(self, enabled: bool) -> None:
-        self.status_label.setText("●  Kontrollert" if enabled else "●  Ikke klar")
+        self.status_label.setText("●  Verified" if enabled else "●  Not ready")
         self.status_label.setProperty("ready", enabled)
         self.open_button.setEnabled(enabled)
         self.open_button.setToolTip(
-            f"Åpne {self.module_name}" if enabled else "eMolPat må repareres først"
+            f"Open {self.module_name}" if enabled else "eMolPat must be repaired first"
         )
 
 
@@ -155,7 +155,7 @@ def placeholder_page(title: str, body: str, action: str | None = None) -> QFrame
     detail.setWordWrap(True)
     layout = QVBoxLayout(page)
     layout.setContentsMargins(0, 0, 0, 0)
-    layout.setSpacing(12)
+    layout.setSpacing(16)
     layout.addWidget(heading)
     layout.addWidget(detail)
     if action:

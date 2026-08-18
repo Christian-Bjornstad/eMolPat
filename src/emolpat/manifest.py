@@ -39,18 +39,19 @@ def _string(data: dict[str, Any], field: str) -> str:
 
 def _module(data: Any, index: int) -> ModuleSpec:
     values = _mapping(data, f"modules[{index}]")
-    entry_point = _string(values, "entry_point")
+    entry_point = _string(data, "entry_point")
     if ENTRY_POINT_PATTERN.fullmatch(entry_point) is None:
         raise ManifestError(f"invalid entry point: {entry_point}")
     return ModuleSpec(
-        id=_string(values, "id"),
-        name=_string(values, "name"),
-        distribution=_string(values, "distribution"),
-        version=_string(values, "version"),
-        import_name=_string(values, "import_name"),
+        id=_string(data, "id"),
+        name=_string(data, "name"),
+        distribution=_string(data, "distribution"),
+        version=_string(data, "version"),
+        import_name=_string(data, "import_name"),
         entry_point=entry_point,
-        icon=_string(values, "icon"),
-        description_nb=_string(values, "description_nb"),
+        icon=_string(data, "icon"),
+        description_nb=_string(data, "description_nb"),
+        description_en=_string(data, "description_en"),
     )
 
 

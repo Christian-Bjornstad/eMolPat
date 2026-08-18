@@ -75,7 +75,8 @@ def run_portal(
 
         coordinator.finished.connect(log_install_failure)
     window.module_selected.connect(selected.append)
-    window.module_selected.connect(lambda _module_id: app.quit())
+        # No longer quit the app when a module is opened – the portal stays open.
+        # Users can close the running app or use the portal's Close portal button.
     window.show()
     if startup_error:
         QMessageBox.warning(window, "Programmet kunne ikke åpnes", startup_error)
