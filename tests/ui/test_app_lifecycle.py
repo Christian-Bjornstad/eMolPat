@@ -12,21 +12,24 @@ def test_portal_outcome_defaults_to_no_selection() -> None:
     assert PortalOutcome().selected_module_id is None
 
 
-def test_run_portal_returns_selected_module_after_window_closes(
+def test_run_portal_returns_selected_module_keeps_window_open(
     qapp,
     manifest: SuiteManifest,
     ready_report: HealthReport,
 ) -> None:
-    def select_module() -> None:
+    def select_and_close() -> None:
         windows = [
             widget
             for widget in qapp.topLevelWidgets()
             if isinstance(widget, MainWindow)
         ]
         assert len(windows) == 1
+        # Click the open button - this emits the signal but keeps the portal open
         windows[0].card("mpn-tolkning").open_button.click()
+        # Now close the portal window manually since it stays open
+        windows[0].close()
 
-    QTimer.singleShot(0, select_module)
+    QTimer.singleShot(0, select_and_close)
 
     outcome = run_portal(manifest, ready_report)
 

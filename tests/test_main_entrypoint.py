@@ -7,7 +7,7 @@ from emolpat.domain import HealthReport, SuiteState
 
 
 def test_bundled_manifest_identifies_current_prerelease() -> None:
-    assert entrypoint.bundled_manifest().suite_version == "1.0.4-python314-test"
+    assert entrypoint.bundled_manifest().suite_version == "1.0.7"
 
 
 def test_main_uses_observed_installation_health(monkeypatch, tmp_path: Path) -> None:

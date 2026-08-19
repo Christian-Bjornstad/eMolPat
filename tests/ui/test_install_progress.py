@@ -5,7 +5,7 @@ from emolpat.ui.main_window import MainWindow
 from emolpat.ui.translations import INSTALL_STAGE_TEXT
 
 
-def test_every_install_stage_has_plain_norwegian_progress_text() -> None:
+def test_every_install_stage_has_plain_english_progress_text() -> None:
     assert set(INSTALL_STAGE_TEXT) == {
         "preflight",
         "dependencies",
@@ -14,7 +14,7 @@ def test_every_install_stage_has_plain_norwegian_progress_text() -> None:
         "record",
         "rollback",
     }
-    assert INSTALL_STAGE_TEXT["dependencies"] == "Installerer godkjente avhengigheter"
+    assert INSTALL_STAGE_TEXT["dependencies"] == "Installing verified dependencies"
 
 
 def test_portal_can_show_accessible_install_progress(
@@ -29,5 +29,5 @@ def test_portal_can_show_accessible_install_progress(
     window.show_install_stage("verification")
 
     assert window.install_progress.isVisibleTo(window)
-    assert window.install_progress.text() == "Kontrollerer hele installasjonen"
-    assert window.install_progress.accessibleName() == "Installasjonsstatus"
+    assert window.install_progress.text() == "Verifying the entire installation"
+    assert window.install_progress.accessibleName() == "Installation status"

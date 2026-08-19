@@ -25,7 +25,7 @@ def test_portal_shows_four_real_modules(
     assert all(card.open_button.isEnabled() for card in window.application_cards)
 
 
-def test_clicking_open_emits_selection_and_closes_portal(
+def test_clicking_open_emits_selection_keeps_portal_open(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -41,7 +41,8 @@ def test_clicking_open_emits_selection_and_closes_portal(
         )
 
     assert signal.args == ["hemafrag"]
-    assert not window.isVisible()
+    # Portal should stay open after selecting an application
+    assert window.isVisible()
 
 
 def test_repair_state_disables_launch_and_explains_status(
@@ -57,7 +58,7 @@ def test_repair_state_disables_launch_and_explains_status(
     qtbot.addWidget(window)
 
     assert not any(card.open_button.isEnabled() for card in window.application_cards)
-    assert "Reparasjon" in window.status_banner.text()
+    assert "Repair required" in window.status_banner.text()
 
 
 def test_navigation_and_actions_are_accessibly_named(
@@ -68,7 +69,7 @@ def test_navigation_and_actions_are_accessibly_named(
     window = MainWindow(manifest, ready_report)
     qtbot.addWidget(window)
 
-    assert window.accessibleName() == "eMolPat programportal"
+    assert window.accessibleName() == "eMolPat program portal"
     assert all(button.accessibleName() for button in window.navigation_buttons)
     assert all(
         card.open_button.accessibleName() for card in window.application_cards
@@ -86,10 +87,10 @@ def test_portal_uses_plain_version_copy_and_removes_privacy_footer(
 
     visible_copy = " ".join(label.text() for label in window.findChildren(QLabel))
 
-    assert window.version_label.text() == "Versjon 1.0.0"
+    assert window.version_label.text() == "Version 1.0.0"
     assert "Suite 1.0.0" not in visible_copy
-    assert "Kun teknisk status" not in visible_copy
-    assert "Ingen pasientdata lagres" not in visible_copy
+    assert "Only technical status" not in visible_copy
+    assert "No patient data stored" not in visible_copy
 
 
 def test_about_tab_opens_creator_and_portal_information(
@@ -107,14 +108,14 @@ def test_about_tab_opens_creator_and_portal_information(
         label.text() for label in window.about_page.findChildren(QLabel)
     )
     assert window.pages.currentWidget() is window.about_page
-    assert "Om eMolPat" in about_copy
-    assert "samlet portal for molekylærpatologiske analyseverktøy" in about_copy
+    assert "About eMolPat" in about_copy
+    assert "unified portal for molecular pathology" in about_copy
     assert "HemaFrag Diagnostics" in about_copy
     assert "IGH Merge" in about_copy
     assert "VPM / HTS Tolkning" in about_copy
     assert "MPN Tolkning" in about_copy
-    assert "Utviklet av Christian Bjørnstad" in about_copy
-    assert window.about_button.accessibleName() == "Om eMolPat"
+    assert "Developed by Christian Bjørnstad" in about_copy
+    assert window.about_button.accessibleName() == "About eMolPat"
 
 
 def test_ready_state_is_a_compact_top_status_box(
@@ -125,8 +126,8 @@ def test_ready_state_is_a_compact_top_status_box(
     window = MainWindow(manifest, ready_report)
     qtbot.addWidget(window)
 
-    assert window.status_banner.text() == "Klar til bruk"
-    assert window.status_banner.maximumWidth() <= 220
+    assert window.status_banner.text() == "Ready"
+    assert window.status_banner.maximumWidth() <= 240
     assert window.status_banner.detail_label.isHidden()
 
 
@@ -139,7 +140,7 @@ def test_not_installed_shows_install_action_and_disables_launch(
     qtbot.addWidget(window)
 
     assert not any(card.open_button.isEnabled() for card in window.application_cards)
-    assert window.install_button.text() == "Installer programmer"
+    assert window.install_button.text() == "Install applications"
     assert not window.install_button.isHidden()
 
 
@@ -148,7 +149,7 @@ def test_repair_state_shows_repair_action(qtbot, manifest: SuiteManifest) -> Non
     window = MainWindow(manifest, health, release_available=True)
     qtbot.addWidget(window)
 
-    assert window.install_button.text() == "Reparer installasjon"
+    assert window.install_button.text() == "Repair installation"
 
 
 def test_successful_install_refresh_enables_all_apps(
@@ -173,7 +174,7 @@ def test_successful_install_refresh_enables_all_apps(
     assert all(card.open_button.isEnabled() for card in window.application_cards)
     assert window.install_button.isHidden()
     assert window.install_progress.text() == (
-        "Oppdateringen er fullført. Start eMolPat på nytt."
+        "The update is complete. Restart eMolPat."
     )
     assert not window.isVisible()
 

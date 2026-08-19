@@ -11,7 +11,7 @@ from tests.test_build_suite import create_inputs
 
 def build_release(tmp_path: Path, name: str) -> Path:
     packages, dependencies = create_inputs(tmp_path / name)
-    return assemble_release("1.0.0", tmp_path / f"dist-{name}", packages, dependencies)
+    return assemble_release("1.0.7", tmp_path / f"dist-{name}", packages, dependencies)
 
 
 def test_archive_has_one_safe_top_level_directory_and_checksum(
@@ -21,13 +21,13 @@ def test_archive_has_one_safe_top_level_directory_and_checksum(
 
     archive, checksum = create_release_archive(release, tmp_path / "out")
 
-    assert archive.name == "eMolPat-1.0.0-windows.zip"
-    assert checksum.name == "eMolPat-1.0.0-windows.zip.sha256"
+    assert archive.name == "eMolPat-1.0.7-windows.zip"
+    assert checksum.name == "eMolPat-1.0.7-windows.zip.sha256"
     with ZipFile(archive) as zipped:
         names = zipped.namelist()
         assert names
-        assert all(name.startswith("eMolPat-1.0.0/") for name in names)
-        assert "eMolPat-1.0.0/manifest.json" in names
+        assert all(name.startswith("eMolPat-1.0.7/") for name in names)
+        assert "eMolPat-1.0.7/manifest.json" in names
         assert not any(".." in PurePosixPath(name).parts for name in names)
     assert checksum.read_text(encoding="ascii").split()[0] == sha256_file(archive)
 
