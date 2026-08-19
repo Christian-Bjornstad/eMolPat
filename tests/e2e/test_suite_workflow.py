@@ -29,9 +29,15 @@ class SelectedPortal:
         self.manifest = manifest
         self.selected = selected
         self.shown = 0
+        self.launched = []
 
-    def __call__(self, _startup_error=None) -> PortalOutcome:
+    def __call__(self, _startup_error=None, launcher=None) -> PortalOutcome:
         self.shown += 1
+        if launcher is not None and self.selected is not None:
+            from emolpat.domain import ModuleSpec
+            module = self.manifest.module(self.selected)
+            launcher(module)
+            return PortalOutcome()
         return PortalOutcome(self.selected)
 
 

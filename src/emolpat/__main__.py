@@ -43,15 +43,16 @@ class InstalledPortal:
             self.health = probe_health(self.manifest, self.paths)
         return self.health
 
-    def __call__(self, startup_error: str | None = None) -> PortalOutcome:
-        return run_portal(
-            self.manifest,
-            self.load_health(),
-            startup_error,
-            release_root=self.release_root,
-            paths=self.paths,
-            health_loader=self.load_health,
-        )
+    def __call__(self, startup_error: str | None = None, launcher=None) -> PortalOutcome:
+            return run_portal(
+                self.manifest,
+                self.load_health(),
+                startup_error,
+                release_root=self.release_root,
+                paths=self.paths,
+                health_loader=self.load_health,
+                launcher=launcher,
+            )
 
 
 def main() -> int:

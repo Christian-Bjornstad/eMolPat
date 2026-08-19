@@ -12,11 +12,25 @@ def test_portal_outcome_defaults_to_no_selection() -> None:
     assert PortalOutcome().selected_module_id is None
 
 
-def test_run_portal_returns_selected_module_keeps_window_open(
+def test_run_portal_launches_selected_module_while_window_stays_open(
     qapp,
     manifest: SuiteManifest,
     ready_report: HealthReport,
 ) -> None:
+    launched = []
+    portal_was_visible_during_launch = []
+
+    def launch(module):
+        launched.append(module.id)
+        windows = [
+            widget
+            for widget in qapp.topLevelWidgets()
+            if isinstance(widget, MainWindow)
+        ]
+        portal_was_visible_during_launch.append(
+            len(windows) == 1 and windows[0].isVisible()
+        )
+
     def select_and_close() -> None:
         windows = [
             widget
@@ -24,16 +38,16 @@ def test_run_portal_returns_selected_module_keeps_window_open(
             if isinstance(widget, MainWindow)
         ]
         assert len(windows) == 1
-        # Click the open button - this emits the signal but keeps the portal open
         windows[0].card("mpn-tolkning").open_button.click()
-        # Now close the portal window manually since it stays open
         windows[0].close()
 
     QTimer.singleShot(0, select_and_close)
 
-    outcome = run_portal(manifest, ready_report)
+    outcome = run_portal(manifest, ready_report, launcher=launch)
 
-    assert outcome == PortalOutcome(selected_module_id="mpn-tolkning")
+    assert launched == ["mpn-tolkning"]
+    assert portal_was_visible_during_launch == [True]
+    assert outcome == PortalOutcome()
     assert not qapp.windowIcon().isNull()
 
 
@@ -46,14 +60,21 @@ class FakePortal:
         self.manifest = manifest
         self.outcomes = iter(outcomes)
         self.errors: list[str | None] = []
+        self.launched: list[str] = []
 
     @property
     def show_count(self) -> int:
         return len(self.errors)
 
-    def __call__(self, startup_error: str | None = None) -> PortalOutcome:
+    def __call__(self, startup_error: str | None = None, launcher=None) -> PortalOutcome:
         self.errors.append(startup_error)
-        return next(self.outcomes)
+        outcome = next(self.outcomes)
+        if outcome.selected_module_id is not None and launcher is not None:
+            module = self.manifest.module(outcome.selected_module_id)
+            launcher(module)
+            # Return empty outcome since launcher handles it
+            return PortalOutcome()
+        return outcome
 
 
 def test_failed_entrypoint_reopens_portal_with_safe_norwegian_error(

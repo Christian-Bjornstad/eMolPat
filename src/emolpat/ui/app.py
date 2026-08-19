@@ -14,8 +14,8 @@ from PyQt6.QtCore import QCoreApplication, QEvent
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
-from emolpat.domain import HealthReport, InstallResult, SuiteManifest
-from emolpat.launch import EntryPointResolver, resolve_entry_point, run_handoff
+from emolpat.domain import HealthReport, InstallResult, SuiteManifest, ModuleSpec
+from emolpat.launch import EntryPointResolver, LaunchResult, resolve_entry_point, run_handoff
 from emolpat.paths import UserPaths
 from emolpat.ui.install_coordinator import InstallCoordinator
 from emolpat.ui.main_window import MainWindow
@@ -43,8 +43,9 @@ def run_portal(
     release_root=None,
     paths: UserPaths | None = None,
     health_loader: Callable[[], HealthReport] | None = None,
+    launcher: Callable[[ModuleSpec], None] | None = None,
 ) -> PortalOutcome:
-    """Run and fully release the portal before returning a selection."""
+    """Run the portal, optionally calling launcher with the selected module while keeping the portal open."""
     app = QApplication.instance()
     owns_application = app is None
     if owns_application:
@@ -74,9 +75,14 @@ def run_portal(
                 )
 
         coordinator.finished.connect(log_install_failure)
-    window.module_selected.connect(selected.append)
-        # No longer quit the app when a module is opened – the portal stays open.
-        # Users can close the running app or use the portal's Close portal button.
+
+    def on_module_selected(module_id: str) -> None:
+        if launcher is not None:
+            launcher(manifest.module(module_id))
+        else:
+            selected.append(module_id)
+
+    window.module_selected.connect(on_module_selected)
     window.show()
     if startup_error:
         QMessageBox.warning(window, "Programmet kunne ikke åpnes", startup_error)
@@ -97,11 +103,38 @@ def run_application_loop(
     """Reopen the portal after pre-start failure; otherwise hand off once."""
     startup_error: str | None = None
     had_failure = False
+    result_holder: dict[str, LaunchResult] = {}
+
+    def launch(module: ModuleSpec) -> None:
+        result_holder["result"] = run_handoff(module, resolver=resolver)
+
     while True:
-        outcome = portal_factory(startup_error)
+        outcome = portal_factory(startup_error, launcher=launch)
+
+        # If launcher was provided, run_portal returns empty outcome and the result is in result_holder
+        result = result_holder.get("result")
+        if result is not None:
+            if result.started:
+                return result.exit_code or 0
+
+            had_failure = True
+            logging.getLogger("emolpat").error(
+                "module_start_failed module_id=%s error_code=%s",
+                result.module_id,
+                result.error_code,
+            )
+            startup_error = (
+                f"{result.module_id} kunne ikke åpnes. "
+                "Kontroller systemstatus, eller kontakt teknisk støtte."
+            )
+            result_holder.clear()
+            continue
+
+        # No launcher, or launcher not invoked (user closed portal)
         if outcome.selected_module_id is None:
             return 1 if had_failure else 0
 
+        # Legacy path: no launcher provided
         module = portal_factory.manifest.module(outcome.selected_module_id)
         result = run_handoff(module, resolver=resolver)
         if result.started:
