@@ -1,11 +1,21 @@
 # Changelog
 
+## [1.1.0] - Unreleased
+
+- Added LVMS-STAT 2.0.0 as the fifth application under the STAT unit.
+- Pinned the zero-argument `lvms_stat.portal:main` launcher to an immutable
+  source commit.
+- Expanded deterministic offline assembly to the portal plus five component
+  wheels while preserving the existing separate-process lifecycle.
+- Kept LVMS authentication, settings, report retrieval, and file storage inside
+  LVMS-STAT.
+
 ## [1.0.7-test] - 2026-08-23
 
 - Kept the eMolPat portal open and responsive while analysis applications run
   in separate Python FELLES processes.
-- Added Hemato, Solide, and STAT unit navigation; LVMS-STAT is shown as a
-  disabled preview and is not part of installation or health verification.
+- Added Hemato, Solide, and STAT unit navigation with an initial LVMS-STAT
+  preview.
 - Added explicit running, retry, and ready states for each application card.
 - Replaced legacy status pages with a compact clinical-light status dialog.
 - Blocked suite update and repair while an analysis application is running.
@@ -31,11 +41,11 @@
 ## Unreleased
 
 - Fixed Python FELLES prompt commands so installation and startup no longer close the interpreter.
-- Added self-contained Windows release ZIPs with all four applications and exact offline dependencies.
+- Added self-contained Windows release ZIPs with all five applications and exact offline dependencies.
 - Replaced unconditional readiness with verified per-user package and import health.
 - Added offline install and repair actions plus tag-based GitHub Release publication.
-- Added the Norwegian eMolPat portal with canonical icons for all four applications.
+- Added the Norwegian eMolPat portal with canonical icons for all five applications.
 - Added separate-process standalone application launch while the portal remains open.
 - Added atomic offline per-user installation, verification, repair, and retained-version rollback.
 - Added redacted rotating technical logs and safe startup-failure recovery.
-- Added deterministic five-wheel release assembly and Python FELLES/Ivanti launchers.
+- Added deterministic six-wheel release assembly and Python FELLES/Ivanti launchers.
