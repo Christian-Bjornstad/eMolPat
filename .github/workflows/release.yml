@@ -18,6 +18,7 @@ jobs:
     runs-on: windows-latest
     env:
       GH_TOKEN: ${{ github.token }}
+      QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v4
         with:
