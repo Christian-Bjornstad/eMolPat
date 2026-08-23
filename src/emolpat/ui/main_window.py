@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QStackedWidget,
@@ -313,6 +314,16 @@ class MainWindow(QMainWindow):
             card.show_failure()
         else:
             card.show_unhealthy()
+
+    def show_running_apps_warning(self, module_ids: frozenset[str]) -> None:
+        names = [
+            module.name for module in self.manifest.modules if module.id in module_ids
+        ]
+        message = (
+            "Lukk kjørende analyseapper før eMolPat oppdateres eller repareres.\n"
+            f"Kjører: {', '.join(names)}"
+        )
+        QMessageBox.warning(self, "Analyseapper kjører", message)
 
     def show_install_stage(self, stage: str) -> None:
         """Expose plain-language progress for a suite-level install operation."""

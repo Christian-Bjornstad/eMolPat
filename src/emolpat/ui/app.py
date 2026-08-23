@@ -46,7 +46,19 @@ def run_portal(
         coordinator = InstallCoordinator(release_root, paths, health_loader)
         coordinator.stage_changed.connect(window.show_install_stage)
         coordinator.finished.connect(window.finish_install)
-        window.install_requested.connect(coordinator.start)
+
+        def request_install() -> None:
+            running = manager.running_module_ids
+            if running:
+                logging.getLogger("emolpat").warning(
+                    "install_blocked running_count=%s",
+                    len(running),
+                )
+                window.show_running_apps_warning(running)
+                return
+            coordinator.start()
+
+        window.install_requested.connect(request_install)
 
         def log_install_failure(result: InstallResult, _health: HealthReport) -> None:
             if not result.ok:
@@ -63,16 +75,25 @@ def run_portal(
         result = manager.start(module)
         if result.started:
             window.set_module_running(module_id)
+            logging.getLogger("emolpat").info(
+                "module_process_started module_id=%s",
+                module_id,
+            )
             return
         window.set_module_failed(module_id, result.error_code or "unknown")
         logging.getLogger("emolpat").error(
-            "module_start_failed module_id=%s error_code=%s",
+            "module_process_failed module_id=%s error_code=%s",
             module_id,
             result.error_code,
         )
 
     def poll_children() -> None:
         for process_exit in manager.poll():
+            logging.getLogger("emolpat").info(
+                "module_process_stopped module_id=%s exit_code=%s",
+                process_exit.module_id,
+                process_exit.exit_code,
+            )
             if process_exit.exit_code == 0:
                 window.set_module_ready(process_exit.module_id)
             else:
