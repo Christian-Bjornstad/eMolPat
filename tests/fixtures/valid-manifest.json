@@ -12,7 +12,7 @@
       "entry_point": "hemafrag_diagnostics.__main__:main",
       "icon": "icons/hemafrag.png",
       "description_nb": "Fragmentanalyse, kvalitetskontroll og rapportering.",
-      "description_en": "Fragment analysis, quality control and reporting"
+      "unit": "hemato"
     },
     {
       "id": "igh-merge",
@@ -23,7 +23,7 @@
       "entry_point": "igh_merge.__main__:main",
       "icon": "icons/igh-merge.png",
       "description_nb": "Sammensl\u00e5ing og kontroll av IGHV-SHM-resultater.",
-      "description_en": "Combine and control IGHV-SHM results"
+      "unit": "hemato"
     },
     {
       "id": "vpm-tolkning",
@@ -34,7 +34,7 @@
       "entry_point": "archer_processor.__main__:main",
       "icon": "icons/vpm-tolkning.png",
       "description_nb": "Variantgjennomgang, evidensinnhenting og rapportering.",
-      "description_en": "Variant traversal, evidence collection and reporting"
+      "unit": "hemato"
     },
     {
       "id": "mpn-tolkning",
@@ -45,7 +45,7 @@
       "entry_point": "mpn_tolkning.__main__:main",
       "icon": "icons/mpn-tolkning.svg",
       "description_nb": "Evidensgjennomgang for JAK2, CALR og MPL.",
-      "description_en": "Evidence traversal for JAK2, CALR and MPL"
+      "unit": "hemato"
     }
   ],
   "files": [

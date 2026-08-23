@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from emolpat.domain import APPROVED_MODULE_IDS
+from emolpat.domain import APPROVED_MODULE_IDS, ModuleUnit
 from emolpat.manifest import ManifestError, load_manifest
 
 FIXTURE = Path(__file__).parent / "fixtures" / "valid-manifest.json"
@@ -31,6 +31,23 @@ def test_load_manifest_returns_the_four_approved_modules() -> None:
     assert manifest.module("hemafrag").entry_point == (
         "hemafrag_diagnostics.__main__:main"
     )
+
+
+def test_load_manifest_assigns_every_approved_module_to_hemato() -> None:
+    manifest = load_manifest(FIXTURE)
+
+    assert {module.unit for module in manifest.modules} == {ModuleUnit.HEMATO}
+    assert all(module.description_nb for module in manifest.modules)
+
+
+def test_load_manifest_rejects_unknown_unit(tmp_path: Path) -> None:
+    data = manifest_data()
+    modules = data["modules"]
+    assert isinstance(modules, list)
+    modules[0]["unit"] = "laboratorium"
+
+    with pytest.raises(ManifestError, match="invalid module unit"):
+        load_manifest(write_manifest(tmp_path, data))
 
 
 def test_load_manifest_rejects_duplicate_module_ids(tmp_path: Path) -> None:

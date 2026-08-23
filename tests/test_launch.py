@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from emolpat.domain import ModuleSpec
+from emolpat.domain import ModuleSpec, ModuleUnit
 from emolpat.launch import resolve_entry_point, run_handoff
 
 MODULE = ModuleSpec(
@@ -14,7 +14,7 @@ MODULE = ModuleSpec(
     entry_point="hemafrag_diagnostics.__main__:main",
     icon="icons/hemafrag.svg",
     description_nb="Fragmentanalyse",
-    description_en="Fragment analysis diagnostics",
+    unit=ModuleUnit.HEMATO,
 )
 
 

@@ -1,4 +1,4 @@
-"""Focused reusable widgets for the eMolPat portal with English text and modern design."""
+"""Gjenbrukbare elementer for eMolPat-portalen."""
 
 from __future__ import annotations
 
@@ -77,7 +77,7 @@ class ApplicationCard(QFrame):
         self.module_id = module.id
         self.module_icon = module_icon(module.id)
         self.setObjectName("applicationCard")
-        self.setAccessibleName(f"{module.name}, version {module.version}")
+        self.setAccessibleName(f"{module.name}, versjon {module.version}")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setMinimumSize(280, 218)
 
@@ -92,11 +92,11 @@ class ApplicationCard(QFrame):
             )
         )
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setAccessibleName(f"Icon for {module.name}")
+        icon_label.setAccessibleName(f"Ikon for {module.name}")
 
         name = QLabel(module.name)
         name.setObjectName("moduleName")
-        version = QLabel(f"Version {module.version}")
+        version = QLabel(f"Versjon {module.version}")
         version.setObjectName("moduleVersion")
         heading = QVBoxLayout()
         heading.setSpacing(2)
@@ -108,17 +108,17 @@ class ApplicationCard(QFrame):
         top.addWidget(icon_label)
         top.addLayout(heading, 1)
 
-        description = QLabel(module.description_en)
+        description = QLabel(module.description_nb)
         description.setObjectName("moduleDescription")
         description.setWordWrap(True)
 
         self.status_label = QLabel()
         self.status_label.setObjectName("moduleStatus")
 
-        self.open_button = QPushButton("Open application")
+        self.open_button = QPushButton("Åpne app")
         self.open_button.setObjectName("primaryButton")
         self.open_button.setMinimumHeight(44)
-        self.open_button.setAccessibleName(f"Open {module.name}")
+        self.open_button.setAccessibleName(f"Åpne {module.name}")
         self.module_name = module.name
         self.set_enabled(enabled)
 
@@ -136,11 +136,13 @@ class ApplicationCard(QFrame):
         layout.addLayout(footer)
 
     def set_enabled(self, enabled: bool) -> None:
-        self.status_label.setText("●  Verified" if enabled else "●  Not ready")
+        self.status_label.setText("●  Verifisert" if enabled else "●  Ikke klar")
         self.status_label.setProperty("ready", enabled)
         self.open_button.setEnabled(enabled)
         self.open_button.setToolTip(
-            f"Open {self.module_name}" if enabled else "eMolPat must be repaired first"
+            f"Åpne {self.module_name}"
+            if enabled
+            else "eMolPat må repareres først"
         )
 
 

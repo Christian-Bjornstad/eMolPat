@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "suite_version": "1.0.5",
+  "suite_version": "1.0.7-test",
   "python_requires": ">=3.14,<3.15",
   "modules": [
     {
@@ -11,7 +11,8 @@
       "import_name": "hemafrag_diagnostics",
       "entry_point": "hemafrag_diagnostics.__main__:main",
       "icon": "icons/hemafrag.png",
-      "description_nb": "Fragmentanalyse, kvalitetskontroll og rapportering."
+      "description_nb": "Fragmentanalyse, kvalitetskontroll og rapportering.",
+      "unit": "hemato"
     },
     {
       "id": "igh-merge",
@@ -21,7 +22,8 @@
       "import_name": "igh_merge",
       "entry_point": "igh_merge.__main__:main",
       "icon": "icons/igh-merge.png",
-      "description_nb": "Sammenslåing og kontroll av IGHV-SHM-resultater."
+      "description_nb": "Sammenslåing og kontroll av IGHV-SHM-resultater.",
+      "unit": "hemato"
     },
     {
       "id": "vpm-tolkning",
@@ -31,7 +33,8 @@
       "import_name": "archer_processor",
       "entry_point": "archer_processor.__main__:main",
       "icon": "icons/vpm-tolkning.png",
-      "description_nb": "Variantgjennomgang, evidensinnhenting og rapportering."
+      "description_nb": "Variantgjennomgang, evidensinnhenting og rapportering.",
+      "unit": "hemato"
     },
     {
       "id": "mpn-tolkning",
@@ -41,7 +44,8 @@
       "import_name": "mpn_tolkning",
       "entry_point": "mpn_tolkning.__main__:main",
       "icon": "icons/mpn-tolkning.png",
-      "description_nb": "Evidensgjennomgang for JAK2, CALR og MPL."
+      "description_nb": "Evidensgjennomgang for JAK2, CALR og MPL.",
+      "unit": "hemato"
     }
   ],
   "files": []

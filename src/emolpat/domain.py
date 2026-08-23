@@ -23,6 +23,14 @@ class SuiteState(StrEnum):
     UNAVAILABLE = "unavailable"
 
 
+class ModuleUnit(StrEnum):
+    """Laboratory unit that owns an application card."""
+
+    HEMATO = "hemato"
+    SOLIDE = "solide"
+    STAT = "stat"
+
+
 @dataclass(frozen=True)
 class FileDigest:
     """Expected SHA-256 digest for one release-relative file."""
@@ -43,7 +51,7 @@ class ModuleSpec:
     entry_point: str
     icon: str
     description_nb: str
-    description_en: str
+    unit: ModuleUnit
 
 
 @dataclass(frozen=True)
