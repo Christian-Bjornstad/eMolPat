@@ -270,15 +270,20 @@ def test_process_failure_log_contains_only_controlled_fields(
 ) -> None:
     manager = FakeProcessManager()
     manager.failures.add("hemafrag")
+    logger = logging.getLogger("emolpat")
+    logger.addHandler(caplog.handler)
 
-    with caplog.at_level(logging.INFO, logger="emolpat"):
-        run_portal_with_scheduled_click_and_close(
-            qapp,
-            manifest,
-            ready_report,
-            process_manager=manager,
-            module_id="hemafrag",
-        )
+    try:
+        with caplog.at_level(logging.INFO, logger="emolpat"):
+            run_portal_with_scheduled_click_and_close(
+                qapp,
+                manifest,
+                ready_report,
+                process_manager=manager,
+                module_id="hemafrag",
+            )
+    finally:
+        logger.removeHandler(caplog.handler)
 
     record = next(
         item

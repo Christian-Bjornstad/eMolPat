@@ -93,8 +93,9 @@ def run_pip_in_process(arguments: tuple[str, ...]) -> int:
             check=False,
             stdin=subprocess.DEVNULL,
         )
-    except Exception:
-        pass  # Ignore failures; pip might already be available
+    except (OSError, subprocess.SubprocessError):
+        # pip may already be available even when the optional bootstrap is denied.
+        pass
     
     from pip._internal.cli.main import main as pip_main
 

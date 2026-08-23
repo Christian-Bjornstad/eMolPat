@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Enhanced diagnostic script for eMolPat health check - works from any directory"""
 
-import json
 import os
 import sys
 from pathlib import Path
@@ -10,10 +9,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from emolpat.domain import InstallRecord, SuiteManifest, SuiteState
-from emolpat.health import read_install_record, evaluate_health
-from emolpat.health_probe import probe_health, module_available
+from emolpat.health import read_install_record
+from emolpat.health_probe import module_available, probe_health
 from emolpat.manifest import load_manifest
 from emolpat.paths import UserPaths
+
 
 def print_section(title):
     print(f"\n{'='*60}")
@@ -42,11 +42,11 @@ def redact_path(text: str) -> str:
 def get_bundled_manifest():
     """Get the bundled manifest from the portal package"""
     try:
-        from importlib.resources import files, as_file
+        from importlib.resources import as_file, files
         resource = files("emolpat.ui.resources").joinpath("suite-manifest.json")
         with as_file(resource) as manifest_path:
             return load_manifest(manifest_path)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - diagnostic boundary reports all failures
         print(f"Error loading bundled manifest: {e}")
         return None
 
@@ -62,7 +62,7 @@ def get_network_manifest():
     
     try:
         return load_manifest(manifest_path)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - diagnostic boundary reports all failures
         print(f"Error loading network manifest: {e}")
         return None
 
@@ -77,7 +77,7 @@ def get_retained_manifest(record: InstallRecord | None, paths: UserPaths):
     
     try:
         return load_manifest(retained_path)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - diagnostic boundary reports all failures
         print(f"Error loading retained manifest: {e}")
         return None
 
@@ -106,12 +106,12 @@ def check_install_record(paths: UserPaths):
     print(f"Exists: {install_record_path.exists()}")
     
     if not install_record_path.exists():
-        print("❌ No install record found")
+        print("FEIL: No install record found")
         return None
     
     try:
         record = read_install_record(install_record_path)
-        print("✅ Install record loaded successfully")
+        print("OK: Install record loaded successfully")
         print(f"Suite version: {record.suite_version}")
         print(f"Verified at: {record.verified_at}")
         print(f"Manifest SHA256: {record.manifest_sha256[:16]}...")
@@ -121,8 +121,8 @@ def check_install_record(paths: UserPaths):
             print(f"  - {module.distribution}=={module.version} (import: {module.import_name})")
         
         return record
-    except Exception as e:
-        print(f"❌ Error reading install record: {e}")
+    except Exception as e:  # noqa: BLE001 - diagnostic boundary reports all failures
+        print(f"FEIL: Error reading install record: {e}")
         return None
 
 def check_manifests(record: InstallRecord | None, paths: UserPaths):
@@ -133,28 +133,28 @@ def check_manifests(record: InstallRecord | None, paths: UserPaths):
     print("\n1. BUNDLED PORTAL MANIFEST:")
     bundled = get_bundled_manifest()
     if bundled:
-        print(f"  ✅ Version: {bundled.suite_version}")
+        print(f"  OK: Version: {bundled.suite_version}")
         print(f"  Modules: {[m.id for m in bundled.modules]}")
     else:
-        print("  ❌ Could not load")
+        print("  FEIL: Could not load")
     
     # 2. Network manifest
     print("\n2. NETWORK RELEASE MANIFEST:")
     network = get_network_manifest()
     if network:
-        print(f"  ✅ Version: {network.suite_version}")
+        print(f"  OK: Version: {network.suite_version}")
         print(f"  Path: {redact_path(os.environ.get('EMOLPAT_RELEASE_ROOT', 'NOT SET'))}")
     else:
-        print("  ❌ Not available or EMOLPAT_RELEASE_ROOT not set")
+        print("  FEIL: Not available or EMOLPAT_RELEASE_ROOT not set")
     
     # 3. Retained manifest
     print("\n3. RETAINED LOCAL MANIFEST:")
     retained = get_retained_manifest(record, paths)
     if retained:
-        print(f"  ✅ Version: {retained.suite_version}")
+        print(f"  OK: Version: {retained.suite_version}")
         print(f"  Path: {redact_path(str(paths.rollback / record.suite_version))}")
     else:
-        print("  ❌ Not available")
+        print("  FEIL: Not available")
     
     return bundled, network, retained
 
@@ -163,7 +163,7 @@ def check_module_status(record: InstallRecord | None):
     print_section("Module Status Check")
     
     if not record:
-        print("❌ No install record - cannot check modules")
+        print("FEIL: No install record - cannot check modules")
         return
     
     print("Checking distribution versions and imports:\n")
@@ -178,11 +178,11 @@ def check_module_status(record: InstallRecord | None):
             from importlib.metadata import version
             actual_version = version(module.distribution)
             version_match = actual_version == module.version
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - diagnostic boundary reports all failures
             actual_version = f"ERROR: {e}"
             version_match = False
         
-        status = "✅" if (importable and version_match) else "❌"
+        status = "OK" if (importable and version_match) else "FEIL"
         print(f"{status} {module.distribution}")
         print(f"    Expected: {module.version}, Actual: {actual_version}")
         print(f"    Import: {'OK' if importable else 'FAILED'}")
@@ -207,11 +207,11 @@ def run_health_check(manifest: SuiteManifest, paths: UserPaths):
             for issue in health_report.issues:
                 print(f"  - {issue}")
         else:
-            print("\n✅ No issues detected")
+            print("\nOK: No issues detected")
         
         return health_report
-    except Exception as e:
-        print(f"❌ Error running health check: {e}")
+    except Exception as e:  # noqa: BLE001 - diagnostic boundary reports all failures
+        print(f"FEIL: Error running health check: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -227,24 +227,24 @@ def main():
     try:
         paths = UserPaths.from_environment(os.environ)
         print(f"\nUserPaths root: {redact_path(str(paths.root))}")
-    except Exception as e:
-        print(f"\n❌ Error creating UserPaths: {e}")
+    except Exception as e:  # noqa: BLE001 - diagnostic boundary reports all failures
+        print(f"\nFEIL: Error creating UserPaths: {e}")
         return
     
     # Check install record
     record = check_install_record(paths)
     
     # Check manifests
-    bundled, network, retained = check_manifests(record, paths)
+    bundled, _network, _retained = check_manifests(record, paths)
     
     # Check module status
-    modules_ok = check_module_status(record)
+    check_module_status(record)
     
     # Run health check using bundled manifest (same as portal)
     if bundled:
         health_report = run_health_check(bundled, paths)
     else:
-        print("\n❌ Cannot run health check - no bundled manifest available")
+        print("\nFEIL: Cannot run health check - no bundled manifest available")
         health_report = None
     
     # Print summary
@@ -252,26 +252,26 @@ def main():
     
     if health_report:
         if health_report.state == SuiteState.READY:
-            print("✅ PASS - Suite is ready")
+            print("OK: PASS - Suite is ready")
             print("   Portal should display: 'Klar til bruk'")
             print("   All application cards should be enabled")
         elif health_report.state == SuiteState.UPDATE_AVAILABLE:
-            print("⚠️  UPDATE AVAILABLE - Newer version detected")
+            print("ADVARSEL: UPDATE AVAILABLE - Newer version detected")
         elif health_report.state == SuiteState.REPAIR_REQUIRED:
-            print("❌ REPAIR REQUIRED - Issues detected")
+            print("FEIL: REPAIR REQUIRED - Issues detected")
             print("   Portal will display: 'Ikke klar'")
             print("   Application cards will be disabled")
         elif health_report.state == SuiteState.NOT_INSTALLED:
-            print("❌ NOT INSTALLED - No valid install record")
+            print("FEIL: NOT INSTALLED - No valid install record")
         elif health_report.state == SuiteState.UNAVAILABLE:
-            print("❌ UNAVAILABLE - System error")
+            print("FEIL: UNAVAILABLE - System error")
         
         if health_report.issues:
-            print(f"\nAction required: Fix the following issues:")
+            print("\nAction required: Fix the following issues:")
             for issue in health_report.issues:
                 print(f"  - {issue}")
     else:
-        print("❌ FAIL - Could not complete health check")
+        print("FEIL: FAIL - Could not complete health check")
     
     print("\n" + "="*60)
     print("Diagnostic complete")
