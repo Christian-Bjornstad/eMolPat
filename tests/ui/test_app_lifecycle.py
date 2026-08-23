@@ -3,92 +3,119 @@ from __future__ import annotations
 from PyQt6.QtCore import QTimer
 
 from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
+from emolpat.launch import LaunchResult, ProcessExit
 from emolpat.paths import UserPaths
-from emolpat.ui.app import PortalOutcome, run_application_loop, run_portal
+from emolpat.ui.app import run_portal
 from emolpat.ui.main_window import MainWindow
 
 
-def test_portal_outcome_defaults_to_no_selection() -> None:
-    assert PortalOutcome().selected_module_id is None
+class FakeProcessManager:
+    def __init__(self) -> None:
+        self.started: list[str] = []
+        self.exits: list[ProcessExit] = []
+        self.failures: set[str] = set()
+        self.monitoring_stopped = False
+        self.poll_count = 0
+
+    def start(self, module) -> LaunchResult:
+        if module.id in self.failures:
+            return LaunchResult(
+                module.id,
+                started=False,
+                error_code="process_start_failed",
+            )
+        self.started.append(module.id)
+        return LaunchResult(module.id, started=True)
+
+    def poll(self) -> tuple[ProcessExit, ...]:
+        self.poll_count += 1
+        exits = tuple(self.exits)
+        self.exits.clear()
+        return exits
+
+    def stop_monitoring(self) -> None:
+        self.monitoring_stopped = True
 
 
-def test_run_portal_returns_selected_module_after_window_closes(
-    qapp,
-    manifest: SuiteManifest,
-    ready_report: HealthReport,
-) -> None:
-    def select_module() -> None:
-        windows = [
-            widget
-            for widget in qapp.topLevelWidgets()
-            if isinstance(widget, MainWindow)
-        ]
-        assert len(windows) == 1
-        windows[0].card("mpn-tolkning").open_button.click()
-
-    QTimer.singleShot(0, select_module)
-
-    outcome = run_portal(manifest, ready_report)
-
-    assert outcome == PortalOutcome(selected_module_id="mpn-tolkning")
-    assert not qapp.windowIcon().isNull()
-
-
-class FakePortal:
-    def __init__(
-        self,
-        manifest: SuiteManifest,
-        outcomes: list[PortalOutcome],
-    ) -> None:
-        self.manifest = manifest
-        self.outcomes = iter(outcomes)
-        self.errors: list[str | None] = []
-
-    @property
-    def show_count(self) -> int:
-        return len(self.errors)
-
-    def __call__(self, startup_error: str | None = None) -> PortalOutcome:
-        self.errors.append(startup_error)
-        return next(self.outcomes)
-
-
-def test_failed_entrypoint_reopens_portal_with_safe_norwegian_error(
-    manifest: SuiteManifest,
-) -> None:
-    portal = FakePortal(
-        manifest,
-        [PortalOutcome("hemafrag"), PortalOutcome()],
+def visible_window(qapp) -> MainWindow:
+    return next(
+        widget for widget in qapp.topLevelWidgets() if isinstance(widget, MainWindow)
     )
 
-    def failing_resolver(_value: str):
-        raise ImportError(r"C:\Users\alice\patient-123 could not import")
 
-    code = run_application_loop(portal, resolver=failing_resolver)
-
-    assert portal.show_count == 2
-    assert code == 1
-    assert portal.errors[0] is None
-    assert portal.errors[1] is not None
-    assert "kunne ikke åpnes" in portal.errors[1].lower()
-    assert "alice" not in portal.errors[1]
-    assert "patient-123" not in portal.errors[1]
-
-
-def test_successful_entrypoint_owns_process_until_it_returns(
-    manifest: SuiteManifest,
+def test_click_starts_child_and_keeps_portal_visible(
+    qapp, manifest: SuiteManifest, ready_report: HealthReport
 ) -> None:
-    portal = FakePortal(manifest, [PortalOutcome("igh-merge")])
-    events: list[str] = []
+    manager = FakeProcessManager()
 
-    code = run_application_loop(
-        portal,
-        resolver=lambda _value: lambda: events.append("ran") or 7,
-    )
+    def click_then_assert_then_close() -> None:
+        window = visible_window(qapp)
+        window.card("hemafrag").open_button.click()
+        assert window.isVisible()
+        assert manager.started == ["hemafrag"]
+        window.close()
 
-    assert portal.show_count == 1
-    assert events == ["ran"]
-    assert code == 7
+    QTimer.singleShot(0, click_then_assert_then_close)
+
+    assert run_portal(manifest, ready_report, process_manager=manager) == 0
+    assert manager.monitoring_stopped
+
+
+def test_two_different_cards_start_two_children(
+    qapp, manifest: SuiteManifest, ready_report: HealthReport
+) -> None:
+    manager = FakeProcessManager()
+
+    def start_both_then_close() -> None:
+        window = visible_window(qapp)
+        window.card("hemafrag").open_button.click()
+        window.card("igh-merge").open_button.click()
+        window.close()
+
+    QTimer.singleShot(0, start_both_then_close)
+
+    run_portal(manifest, ready_report, process_manager=manager)
+
+    assert manager.started == ["hemafrag", "igh-merge"]
+
+
+def test_timer_consumes_finished_child(
+    qapp, manifest: SuiteManifest, ready_report: HealthReport
+) -> None:
+    manager = FakeProcessManager()
+
+    def start_child() -> None:
+        window = visible_window(qapp)
+        window.card("mpn-tolkning").open_button.click()
+        manager.exits.append(ProcessExit("mpn-tolkning", 0))
+        window.process_timer.timeout.emit()
+        try:
+            assert manager.poll_count > 0
+            assert window.card("mpn-tolkning").open_button.isEnabled()
+        finally:
+            window.close()
+
+    QTimer.singleShot(0, start_child)
+
+    run_portal(manifest, ready_report, process_manager=manager)
+
+
+def test_process_start_failure_leaves_portal_visible(
+    qapp, manifest: SuiteManifest, ready_report: HealthReport
+) -> None:
+    manager = FakeProcessManager()
+    manager.failures.add("igh-merge")
+
+    def fail_then_assert_then_close() -> None:
+        window = visible_window(qapp)
+        window.card("igh-merge").open_button.click()
+        assert window.isVisible()
+        assert window.card("igh-merge").open_button.isEnabled()
+        window.close()
+
+    QTimer.singleShot(0, fail_then_assert_then_close)
+
+    assert run_portal(manifest, ready_report, process_manager=manager) == 0
 
 
 class SignalStub:
@@ -130,9 +157,7 @@ def test_run_portal_wires_install_action_to_coordinator(
     )
 
     def install_then_close() -> None:
-        window = next(
-            widget for widget in qapp.topLevelWidgets() if isinstance(widget, MainWindow)
-        )
+        window = visible_window(qapp)
         window.install_button.click()
         window.close()
 
@@ -145,5 +170,5 @@ def test_run_portal_wires_install_action_to_coordinator(
         health_loader=lambda: HealthReport(SuiteState.READY, "1.0.0", ()),
     )
 
-    assert outcome == PortalOutcome()
+    assert outcome == 0
     assert started == [True]

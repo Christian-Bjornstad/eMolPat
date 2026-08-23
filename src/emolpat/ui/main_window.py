@@ -19,7 +19,12 @@ from PyQt6.QtWidgets import (
 )
 
 from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
-from emolpat.ui.translations import INSTALL_COMPLETE_TEXT, INSTALL_STAGE_TEXT, NAVIGATION, STATE_TEXT
+from emolpat.ui.translations import (
+    INSTALL_COMPLETE_TEXT,
+    INSTALL_STAGE_TEXT,
+    NAVIGATION,
+    STATE_TEXT,
+)
 from emolpat.ui.widgets import ApplicationCard, StatusBanner, placeholder_page
 
 STYLESHEET = """/* eMolPat Portal - Modern English Frontend Design */
@@ -225,7 +230,7 @@ QWidget#cardsContainer, QScrollArea QWidget#qt_scrollarea_viewport {
 
 
 class MainWindow(QMainWindow):
-    """Suite dashboard that emits one selected module and then closes."""
+    """Suite dashboard that remains available while analysis apps run."""
 
     module_selected = pyqtSignal(str)
     install_requested = pyqtSignal()
@@ -255,6 +260,15 @@ class MainWindow(QMainWindow):
             if card.module_id == module_id:
                 return card
         raise KeyError(f"unknown module card: {module_id}")
+
+    def set_module_running(self, module_id: str) -> None:
+        self.card(module_id).open_button.setEnabled(False)
+
+    def set_module_ready(self, module_id: str) -> None:
+        self.card(module_id).set_enabled(self.health.state is SuiteState.READY)
+
+    def set_module_failed(self, module_id: str, _error_code: str) -> None:
+        self.card(module_id).set_enabled(self.health.state is SuiteState.READY)
 
     def show_install_stage(self, stage: str) -> None:
         """Expose plain-language progress for a suite-level install operation."""

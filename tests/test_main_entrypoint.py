@@ -26,13 +26,16 @@ def test_main_uses_observed_installation_health(monkeypatch, tmp_path: Path) -> 
         raising=False,
     )
 
-    def run_loop(portal):
-        captured["portal"] = portal
+    def run_once(manifest, health, **kwargs):
+        captured["manifest"] = manifest
+        captured["health"] = health
+        captured["health_loader"] = kwargs["health_loader"]
         return 17
 
-    monkeypatch.setattr(entrypoint, "run_application_loop", run_loop)
+    monkeypatch.setattr(entrypoint, "run_portal", run_once)
 
     result = entrypoint.main()
 
     assert result == 17
-    assert captured["portal"].health is observed
+    assert captured["health"] is observed
+    assert captured["health_loader"]() is observed

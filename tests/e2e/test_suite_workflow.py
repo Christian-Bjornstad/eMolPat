@@ -7,9 +7,9 @@ from pathlib import Path
 from emolpat.domain import SuiteState
 from emolpat.health import evaluate_health, read_install_record
 from emolpat.install import install_release
+from emolpat.launch import ApplicationProcessManager
 from emolpat.manifest import load_manifest
 from emolpat.paths import UserPaths
-from emolpat.ui.app import PortalOutcome, run_application_loop
 
 
 class SyntheticWorkstation:
@@ -24,15 +24,9 @@ class SyntheticWorkstation:
         return True
 
 
-class SelectedPortal:
-    def __init__(self, manifest, selected: str) -> None:
-        self.manifest = manifest
-        self.selected = selected
-        self.shown = 0
-
-    def __call__(self, _startup_error=None) -> PortalOutcome:
-        self.shown += 1
-        return PortalOutcome(self.selected)
+class RunningChild:
+    def poll(self) -> None:
+        return None
 
 
 def synthetic_release(root: Path) -> Path:
@@ -67,7 +61,7 @@ def synthetic_release(root: Path) -> Path:
     return root
 
 
-def test_clean_install_health_selection_and_handoff(tmp_path: Path) -> None:
+def test_clean_install_health_and_child_command(tmp_path: Path) -> None:
     release = synthetic_release(tmp_path / "release")
     user_root = tmp_path / "user"
     paths = UserPaths(
@@ -89,13 +83,14 @@ def test_clean_install_health_selection_and_handoff(tmp_path: Path) -> None:
     health = evaluate_health(manifest, record, distributions, imports)
     assert health.state is SuiteState.READY
 
-    portal = SelectedPortal(manifest, "hemafrag")
-    events = []
-    exit_code = run_application_loop(
-        portal,
-        resolver=lambda value: lambda: events.append(value) or 0,
+    commands: list[tuple[str, ...]] = []
+    manager = ApplicationProcessManager(
+        executable="python-felles.exe",
+        spawn=lambda argv: commands.append(argv) or RunningChild(),
     )
+    launch = manager.start(manifest.module("hemafrag"))
 
-    assert exit_code == 0
-    assert portal.shown == 1
-    assert events == ["hemafrag_diagnostics.__main__:main"]
+    assert launch.started
+    assert commands == [
+        ("python-felles.exe", "-m", "emolpat.module_runner", "hemafrag")
+    ]
