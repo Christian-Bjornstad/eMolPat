@@ -25,7 +25,7 @@ def test_portal_shows_four_real_modules(
     assert all(card.open_button.isEnabled() for card in window.application_cards)
 
 
-def test_clicking_open_emits_selection_and_closes_portal(
+def test_clicking_open_emits_selection_and_keeps_portal_open(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -41,7 +41,56 @@ def test_clicking_open_emits_selection_and_closes_portal(
         )
 
     assert signal.args == ["hemafrag"]
-    assert not window.isVisible()
+    assert window.isVisible()
+
+
+def test_running_card_blocks_duplicate_launch(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    window.set_module_running("hemafrag")
+
+    card = window.card("hemafrag")
+    assert card.open_button.text() == "Kjører"
+    assert not card.open_button.isEnabled()
+    assert window.card("igh-merge").open_button.isEnabled()
+
+
+def test_finished_card_returns_to_ready(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.set_module_running("mpn-tolkning")
+
+    window.set_module_ready("mpn-tolkning")
+
+    card = window.card("mpn-tolkning")
+    assert card.open_button.text() == "Åpne app"
+    assert card.open_button.isEnabled()
+
+
+def test_failed_card_offers_retry_without_exposing_details(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    window.set_module_failed("igh-merge", "process_start_failed")
+
+    card = window.card("igh-merge")
+    assert card.open_button.text() == "Prøv igjen"
+    assert card.open_button.isEnabled()
+    assert "kunne ikke åpnes" in card.status_label.text().lower()
+    assert "process_start_failed" not in card.status_label.text()
 
 
 def test_repair_state_disables_launch_and_explains_status(

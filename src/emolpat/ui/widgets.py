@@ -136,13 +136,63 @@ class ApplicationCard(QFrame):
         layout.addLayout(footer)
 
     def set_enabled(self, enabled: bool) -> None:
-        self.status_label.setText("●  Verifisert" if enabled else "●  Ikke klar")
-        self.status_label.setProperty("ready", enabled)
+        if enabled:
+            self.show_ready()
+        else:
+            self.show_unhealthy()
+
+    def _show_state(
+        self,
+        state: str,
+        status_text: str,
+        button_text: str,
+        enabled: bool,
+        tooltip: str,
+    ) -> None:
+        self.status_label.setText(status_text)
+        self.status_label.setProperty("state", state)
+        self.status_label.setProperty("ready", state == "ready")
+        self.open_button.setText(button_text)
         self.open_button.setEnabled(enabled)
-        self.open_button.setToolTip(
-            f"Åpne {self.module_name}"
-            if enabled
-            else "eMolPat må repareres først"
+        self.open_button.setToolTip(tooltip)
+        self.open_button.setAccessibleName(f"{button_text}: {self.module_name}")
+        self.status_label.style().unpolish(self.status_label)
+        self.status_label.style().polish(self.status_label)
+
+    def show_ready(self) -> None:
+        self._show_state(
+            "ready",
+            "●  Verifisert",
+            "Åpne app",
+            True,
+            f"Åpne {self.module_name}",
+        )
+
+    def show_unhealthy(self) -> None:
+        self._show_state(
+            "unhealthy",
+            "●  Ikke klar",
+            "Åpne app",
+            False,
+            "eMolPat må repareres først",
+        )
+
+    def show_running(self) -> None:
+        self._show_state(
+            "running",
+            "●  Kjører",
+            "Kjører",
+            False,
+            f"{self.module_name} kjører allerede",
+        )
+
+    def show_failure(self) -> None:
+        self._show_state(
+            "failed",
+            "Appen kunne ikke åpnes",
+            "Prøv igjen",
+            True,
+            f"Prøv å åpne {self.module_name} igjen",
         )
 
 

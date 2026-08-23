@@ -262,13 +262,21 @@ class MainWindow(QMainWindow):
         raise KeyError(f"unknown module card: {module_id}")
 
     def set_module_running(self, module_id: str) -> None:
-        self.card(module_id).open_button.setEnabled(False)
+        self.card(module_id).show_running()
 
     def set_module_ready(self, module_id: str) -> None:
-        self.card(module_id).set_enabled(self.health.state is SuiteState.READY)
+        card = self.card(module_id)
+        if self.health.state is SuiteState.READY:
+            card.show_ready()
+        else:
+            card.show_unhealthy()
 
     def set_module_failed(self, module_id: str, _error_code: str) -> None:
-        self.card(module_id).set_enabled(self.health.state is SuiteState.READY)
+        card = self.card(module_id)
+        if self.health.state is SuiteState.READY:
+            card.show_failure()
+        else:
+            card.show_unhealthy()
 
     def show_install_stage(self, stage: str) -> None:
         """Expose plain-language progress for a suite-level install operation."""
