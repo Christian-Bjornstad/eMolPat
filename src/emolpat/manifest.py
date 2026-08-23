@@ -10,6 +10,7 @@ from typing import Any
 from emolpat.domain import (
     APPROVED_MODULE_IDS,
     FileDigest,
+    InstallRecord,
     ModuleSpec,
     ModuleUnit,
     SuiteManifest,
@@ -46,11 +47,22 @@ def _module_unit(data: dict[str, Any]) -> ModuleUnit:
         raise ManifestError(f"invalid module unit: {value}") from exc
 
 
-def _module(data: Any, index: int) -> ModuleSpec:
+def _module(
+    data: Any,
+    index: int,
+    *,
+    allow_legacy_description: bool = False,
+) -> ModuleSpec:
     values = _mapping(data, f"modules[{index}]")
     entry_point = _string(values, "entry_point")
     if ENTRY_POINT_PATTERN.fullmatch(entry_point) is None:
         raise ManifestError(f"invalid entry point: {entry_point}")
+    description_nb = _string(values, "description_nb")
+    description_en = (
+        description_nb
+        if allow_legacy_description and "description_en" not in values
+        else _string(values, "description_en")
+    )
     return ModuleSpec(
         id=_string(values, "id"),
         name=_string(values, "name"),
@@ -59,8 +71,8 @@ def _module(data: Any, index: int) -> ModuleSpec:
         import_name=_string(values, "import_name"),
         entry_point=entry_point,
         icon=_string(values, "icon"),
-        description_nb=_string(values, "description_nb"),
-        description_en=_string(values, "description_en"),
+        description_nb=description_nb,
+        description_en=description_en,
         unit=_module_unit(values),
     )
 
@@ -73,8 +85,12 @@ def _file_digest(data: Any, index: int) -> FileDigest:
     return FileDigest(path=_string(values, "path"), sha256=digest)
 
 
-def load_manifest(path: Path) -> SuiteManifest:
-    """Load a manifest and enforce the version-one suite contract."""
+def _load_manifest(
+    path: Path,
+    expected_module_ids: tuple[str, ...] | None,
+    *,
+    allow_legacy_description: bool = False,
+) -> SuiteManifest:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -88,7 +104,14 @@ def load_manifest(path: Path) -> SuiteManifest:
     raw_modules = data.get("modules")
     if not isinstance(raw_modules, list):
         raise ManifestError("modules must be an array")
-    modules = tuple(_module(value, index) for index, value in enumerate(raw_modules))
+    modules = tuple(
+        _module(
+            value,
+            index,
+            allow_legacy_description=allow_legacy_description,
+        )
+        for index, value in enumerate(raw_modules)
+    )
     module_ids = tuple(module.id for module in modules)
     duplicate = next(
         (module_id for module_id in module_ids if module_ids.count(module_id) > 1),
@@ -96,7 +119,7 @@ def load_manifest(path: Path) -> SuiteManifest:
     )
     if duplicate is not None:
         raise ManifestError(f"duplicate module id: {duplicate}")
-    if module_ids != APPROVED_MODULE_IDS:
+    if expected_module_ids is not None and module_ids != expected_module_ids:
         raise ManifestError(
             "modules must match the approved module set in its canonical order"
         )
@@ -113,3 +136,31 @@ def load_manifest(path: Path) -> SuiteManifest:
         modules=modules,
         files=files,
     )
+
+
+def load_manifest(path: Path) -> SuiteManifest:
+    """Load a manifest and enforce the current approved suite contract."""
+    return _load_manifest(path, APPROVED_MODULE_IDS)
+
+
+def load_historical_manifest(path: Path, record: InstallRecord) -> SuiteManifest:
+    """Load a retained release only when it matches its verified install record."""
+    manifest = _load_manifest(
+        path,
+        None,
+        allow_legacy_description=True,
+    )
+    actual_modules = tuple(
+        (module.distribution, module.version, module.import_name)
+        for module in manifest.modules
+    )
+    recorded_modules = tuple(
+        (module.distribution, module.version, module.import_name)
+        for module in record.modules
+    )
+    if (
+        manifest.suite_version != record.suite_version
+        or actual_modules != recorded_modules
+    ):
+        raise ManifestError("historical manifest does not match install record")
+    return manifest

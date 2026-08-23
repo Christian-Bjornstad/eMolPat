@@ -28,7 +28,7 @@ from emolpat.domain import (
 )
 from emolpat.health import InstallRecordError, read_install_record
 from emolpat.integrity import sha256_file, verify_release
-from emolpat.manifest import load_manifest
+from emolpat.manifest import load_historical_manifest, load_manifest
 from emolpat.paths import UserPaths
 
 
@@ -176,13 +176,21 @@ def _attempt_rollback(
     if previous is None:
         return False
     retained = paths.rollback / previous.suite_version
-    if not (retained / "manifest.json").is_file():
+    manifest_path = retained / "manifest.json"
+    if not manifest_path.is_file():
         return False
-    manifest = load_manifest(retained / "manifest.json")
-    for command in build_pip_commands(retained):
-        if runner(command) != 0:
+    try:
+        if sha256_file(manifest_path) != previous.manifest_sha256:
             return False
-    return _runner_verifies(runner, manifest)
+        manifest = load_historical_manifest(manifest_path, previous)
+        if not verify_release(retained, manifest).ok:
+            return False
+        for command in build_pip_commands(retained):
+            if runner(command) != 0:
+                return False
+        return _runner_verifies(runner, manifest)
+    except (OSError, RuntimeError, ValueError):
+        return False
 
 
 def install_release(

@@ -191,13 +191,25 @@ def test_failed_verification_keeps_previous_record(tmp_path: Path) -> None:
 
 def test_failed_update_restores_retained_previous_release(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
-    # Add a pip wheel to the test release
-    (release / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
     paths = paths_at(tmp_path / "user")
-    replace_install_record(paths.install_record, old_record())
-    create_release(paths.rollback / "1.0.0", version="1.0.0")
-    # Rollback also needs pip wheel
-    (paths.rollback / "1.0.0" / "wheelhouse" / "pip-26.1.2-py3-none-any.whl").write_bytes(b"wheel")
+    retained = create_release(paths.rollback / "1.0.0", version="1.0.0")
+    manifest = json.loads((retained / "manifest.json").read_text(encoding="utf-8"))
+    previous = InstallRecord(
+        suite_version="1.0.0",
+        manifest_sha256=hashlib.sha256(
+            (retained / "manifest.json").read_bytes()
+        ).hexdigest(),
+        verified_at="2026-08-12T10:00:00+00:00",
+        modules=tuple(
+            InstalledModule(
+                module["distribution"],
+                module["version"],
+                module["import_name"],
+            )
+            for module in manifest["modules"]
+        ),
+    )
+    replace_install_record(paths.install_record, previous)
     runner = RecordingRunner(codes=[0, 0, 0, 9, 0, 0, 0, 0])
 
     result = install_release(release, runner, paths)
@@ -214,7 +226,46 @@ def test_failed_update_restores_retained_previous_release(tmp_path: Path) -> Non
             "dependencies",
             "components",
         ]
-    assert read_install_record(paths.install_record) == old_record()
+    assert read_install_record(paths.install_record) == previous
+
+
+def test_failed_update_restores_historical_four_module_release(
+    tmp_path: Path,
+) -> None:
+    release = create_release(tmp_path / "release")
+    paths = paths_at(tmp_path / "user")
+    _retained, previous = create_historical_release(
+        paths.rollback / "1.0.7-test"
+    )
+    replace_install_record(paths.install_record, previous)
+    runner = RecordingRunner(codes=[0, 0, 0, 9, 0, 0, 0, 0])
+
+    result = install_release(release, runner, paths)
+
+    assert not result.ok
+    assert result.rolled_back
+    assert read_install_record(paths.install_record) == previous
+
+
+def test_historical_rollback_rejects_manifest_hash_mismatch(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+    paths = paths_at(tmp_path / "user")
+    _retained, previous = create_historical_release(
+        paths.rollback / "1.0.7-test"
+    )
+    tampered_record = InstallRecord(
+        suite_version=previous.suite_version,
+        manifest_sha256="0" * 64,
+        verified_at=previous.verified_at,
+        modules=previous.modules,
+    )
+    replace_install_record(paths.install_record, tampered_record)
+    runner = RecordingRunner(codes=[0, 0, 0, 9])
+
+    result = install_release(release, runner, paths)
+
+    assert not result.rolled_back
+    assert len(runner.commands) == 4
 
 
 def test_subprocess_denial_falls_back_to_in_process_pip(monkeypatch) -> None:
@@ -254,3 +305,28 @@ def test_ensurepip_bootstrap_is_skipped_when_pip_is_already_available(
 
     assert run_command(command) == 0
     assert calls == []
+
+
+def create_historical_release(root: Path) -> tuple[Path, InstallRecord]:
+    release = create_release(root, version="1.0.7-test")
+    manifest_path = release / "manifest.json"
+    document = json.loads(manifest_path.read_text(encoding="utf-8"))
+    document["modules"] = document["modules"][:-1]
+    for module in document["modules"]:
+        module.pop("description_en")
+    manifest_path.write_text(json.dumps(document), encoding="utf-8")
+    modules = tuple(
+        InstalledModule(
+            module["distribution"],
+            module["version"],
+            module["import_name"],
+        )
+        for module in document["modules"]
+    )
+    record = InstallRecord(
+        suite_version="1.0.7-test",
+        manifest_sha256=hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        verified_at="2026-08-23T10:00:00+00:00",
+        modules=modules,
+    )
+    return release, record
