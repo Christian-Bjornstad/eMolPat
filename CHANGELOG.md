@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2026-08-23
 
 - Added LVMS-STAT 2.0.0 as the fifth application under the STAT unit.
 - Pinned the zero-argument `lvms_stat.portal:main` launcher to an immutable
