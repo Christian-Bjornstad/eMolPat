@@ -38,7 +38,7 @@
   launchers to the verified release manifest.
 - Fixed the Python FELLES bootstrap to activate the Python 3.14 per-user site.
 
-## Unreleased
+## Initial development
 
 - Fixed Python FELLES prompt commands so installation and startup no longer close the interpreter.
 - Added self-contained Windows release ZIPs with all five applications and exact offline dependencies.

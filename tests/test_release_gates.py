@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+import importlib.metadata
+from pathlib import Path
+from subprocess import CompletedProcess
+
+import pytest
+
+from scripts.smoke_installed_suite import smoke_installed_suite
+from scripts.test_components import test_components as run_component_tests
+
+
+def test_component_gate_runs_declared_commands_with_active_python(tmp_path: Path) -> None:
+    calls = []
+
+    def runner(command, **kwargs):
+        calls.append((command, kwargs))
+        return CompletedProcess(command, 0)
+
+    run_component_tests(
+        Path("release/components.json"),
+        tmp_path,
+        runner=runner,
+        python_executable="C:/Python314/python.exe",
+    )
+
+    assert len(calls) == 10
+    for index in range(0, len(calls), 2):
+        install, install_options = calls[index]
+        command, test_options = calls[index + 1]
+        assert install[:4] == (
+            "C:/Python314/python.exe",
+            "-m",
+            "pip",
+            "install",
+        )
+        assert install_options["check"] is True
+        assert command == (
+            "C:/Python314/python.exe",
+            "-m",
+            "pytest",
+            "-q",
+        )
+        assert test_options["check"] is True
+
+
+def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    versions = {
+        "emolpat": "0.2.0",
+        "hemafrag-diagnostics": "1.2.0",
+        "igh-merge": "0.2.0",
+        "archer-prosess": "0.1.0",
+        "mpn-tolkning": "0.1.0",
+        "lvms-stat": "2.0.0",
+    }
+    imported = []
+
+    monkeypatch.setattr(importlib.metadata, "version", versions.__getitem__)
+
+    class Module:
+        @staticmethod
+        def main() -> int:
+            return 0
+
+    def importer(name: str):
+        imported.append(name)
+        return Module()
+
+    result = smoke_installed_suite(
+        Path("src/emolpat/ui/resources/suite-manifest.json"),
+        importer=importer,
+    )
+
+    assert result == 0
+    assert imported == [
+        "emolpat",
+        "hemafrag_diagnostics.__main__",
+        "igh_merge.__main__",
+        "archer_processor.__main__",
+        "mpn_tolkning.__main__",
+        "lvms_stat.portal",
+    ]

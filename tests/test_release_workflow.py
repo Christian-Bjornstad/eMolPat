@@ -10,13 +10,16 @@ def test_release_workflow_is_tag_scoped_and_publishes_only_verified_assets() -> 
     assert "workflow_dispatch:" in text
     assert "version:" in text
     assert "windows-latest" in text
-    assert 'python-version: "3.12"' in text
+    assert 'python-version: "3.14"' in text
     assert "contents: write" in text
     assert "python -m pytest -q" in text
     assert "python -m ruff check ." in text
     assert "scripts/checkout_components.py" in text
+    assert "scripts/test_components.py" in text
     assert "scripts/build_suite.py" in text
     assert "scripts/verify_suite.py" in text
+    assert "scripts/smoke_installed_suite.py" in text
+    assert "release-smoke" in text
     assert "scripts/archive_release.py" in text
     assert 'GH_TOKEN: ${{ github.token }}' in text
     assert 'dist/eMolPat-$version-windows.zip"' in text

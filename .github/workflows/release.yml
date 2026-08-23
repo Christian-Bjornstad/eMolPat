@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
           cache: pip
       - name: Resolve immutable version
         shell: pwsh
@@ -50,10 +50,29 @@ jobs:
           python -m pytest -q
       - name: Checkout pinned applications
         run: python scripts/checkout_components.py --output components
+      - name: Test pinned applications
+        run: python scripts/test_components.py --component-root components
       - name: Build verified offline directory
         run: python scripts/build_suite.py --version $env:RELEASE_VERSION --output dist --component-root components
       - name: Verify assembled release
         run: python scripts/verify_suite.py "dist/eMolPat-$env:RELEASE_VERSION"
+      - name: Install and smoke-test assembled wheels
+        shell: pwsh
+        run: |
+          $release = (Resolve-Path "dist/eMolPat-$env:RELEASE_VERSION").Path
+          python -m venv .release-smoke
+          $smokePython = (Resolve-Path ".release-smoke/Scripts/python.exe").Path
+          & $smokePython -m pip install `
+            --no-index `
+            --find-links "$release/wheelhouse" `
+            --require-hashes `
+            -r "$release/requirements.lock"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $packages = Get-ChildItem -LiteralPath "$release/packages" -Filter "*.whl"
+          & $smokePython -m pip install --no-index --no-deps @($packages.FullName)
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $smokePython scripts/smoke_installed_suite.py "$release/manifest.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Create deterministic release assets
         run: python scripts/archive_release.py "dist/eMolPat-$env:RELEASE_VERSION" --output dist
       - name: Publish GitHub Release
