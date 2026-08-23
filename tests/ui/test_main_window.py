@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QLabel
+from PyQt6.QtWidgets import QLabel, QPushButton
 
 from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
 from emolpat.ui.main_window import MainWindow
@@ -23,6 +23,59 @@ def test_portal_shows_four_real_modules(
     ]
     assert all(not card.module_icon.isNull() for card in window.application_cards)
     assert all(card.open_button.isEnabled() for card in window.application_cards)
+
+
+def test_sidebar_contains_only_units_and_about(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    labels = [button.text() for button in window.navigation_buttons]
+    assert labels == ["Hemato", "Solide", "STAT", "Om eMolPat"]
+    assert "Systemstatus" not in labels
+    assert "Oppdater" not in labels
+
+
+def test_hemato_contains_all_four_real_apps(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    assert [card.module_id for card in window.application_cards] == [
+        "hemafrag",
+        "igh-merge",
+        "vpm-tolkning",
+        "mpn-tolkning",
+    ]
+
+
+def test_solide_is_empty_and_stat_is_coming_later(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    solide_copy = " ".join(
+        label.text() for label in window.solide_page.findChildren(QLabel)
+    )
+    stat_copy = " ".join(
+        label.text() for label in window.stat_page.findChildren(QLabel)
+    )
+    stat_buttons = window.stat_page.findChildren(QPushButton)
+
+    assert "Ingen verktøy tilgjengelig ennå" in solide_copy
+    assert "LVMS-STAT" in stat_copy
+    assert len(stat_buttons) == 1
+    assert stat_buttons[0].text() == "Kommer senere"
+    assert not stat_buttons[0].isEnabled()
 
 
 def test_clicking_open_emits_selection_and_keeps_portal_open(

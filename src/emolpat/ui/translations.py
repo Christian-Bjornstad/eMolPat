@@ -1,39 +1,40 @@
-"""English portal text kept separate from presentation code."""
+"""Norsk portaltekst holdt adskilt fra presentasjonskoden."""
 
-NAVIGATION = (
-    ("Programs", "Open installed analysis applications"),
-    ("System Status", "Check installation and components"),
-    ("Update", "Manage the entire eMolPat package"),
-    ("Help & Support", "Find guidance and technical information"),
+from emolpat.domain import ModuleUnit
+
+UNIT_NAVIGATION = (
+    (ModuleUnit.HEMATO, "Hemato", "Åpne hematologiske analyseverktøy"),
+    (ModuleUnit.SOLIDE, "Solide", "Verktøy for solide svulster"),
+    (ModuleUnit.STAT, "STAT", "Statistikkverktøy"),
 )
 
 STATE_TEXT = {
-    "ready": ("Ready", "All four applications have been verified."),
+    "ready": ("Klar til bruk", "Alle fire programmer er verifisert."),
     "not_installed": (
-        "Applications must be installed",
-        "Install the complete eMolPat package before opening the applications.",
+        "Programmer må installeres",
+        "Installer hele eMolPat-pakken før programmene åpnes.",
     ),
     "update_available": (
-        "Update available",
-        "A newer approved eMolPat package is available.",
+        "Oppdatering tilgjengelig",
+        "En nyere godkjent eMolPat-pakke er tilgjengelig.",
     ),
     "repair_required": (
-        "Repair required",
-        "One or more applications must be repaired before they can be opened.",
+        "Reparasjon kreves",
+        "Ett eller flere programmer må repareres før de kan åpnes.",
     ),
     "unavailable": (
-        "System unavailable",
-        "Check Python FELLES and access to the approved package.",
+        "System utilgjengelig",
+        "Kontroller Python FELLES og tilgang til den godkjente pakken.",
     ),
 }
 
 INSTALL_STAGE_TEXT = {
-    "preflight": "Checking approved eMolPat package",
-    "dependencies": "Installing verified dependencies",
-    "components": "Installing portal and analysis applications",
-    "verification": "Verifying the entire installation",
-    "record": "Completing eMolPat installation",
-    "rollback": "Restoring previous approved version",
+    "preflight": "Kontrollerer godkjent eMolPat-pakke",
+    "dependencies": "Installerer godkjente avhengigheter",
+    "components": "Installerer portal og analyseprogrammer",
+    "verification": "Kontrollerer hele installasjonen",
+    "record": "Fullfører eMolPat-installasjonen",
+    "rollback": "Gjenoppretter forrige godkjente versjon",
 }
 
-INSTALL_COMPLETE_TEXT = "The update is complete. Restart eMolPat."
+INSTALL_COMPLETE_TEXT = "Oppdateringen er fullført. Start eMolPat på nytt."

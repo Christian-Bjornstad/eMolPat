@@ -38,7 +38,7 @@ class StatusBanner(QFrame):
         super().__init__()
         self.setObjectName("statusBanner")
         self.setProperty("ready", ready)
-        self.setMaximumWidth(240)
+        self.setMaximumWidth(220)
 
         symbol = QLabel("✓" if ready else "!")
         symbol.setObjectName("statusSymbol")

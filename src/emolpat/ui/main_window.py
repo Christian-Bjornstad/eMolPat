@@ -18,12 +18,18 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
+from emolpat.domain import (
+    HealthReport,
+    InstallResult,
+    ModuleUnit,
+    SuiteManifest,
+    SuiteState,
+)
 from emolpat.ui.translations import (
     INSTALL_COMPLETE_TEXT,
     INSTALL_STAGE_TEXT,
-    NAVIGATION,
     STATE_TEXT,
+    UNIT_NAVIGATION,
 )
 from emolpat.ui.widgets import ApplicationCard, StatusBanner, placeholder_page
 
@@ -249,7 +255,7 @@ class MainWindow(QMainWindow):
         self.application_cards: list[ApplicationCard] = []
         self.navigation_buttons: list[QPushButton] = []
         self.setWindowTitle(f"eMolPat {manifest.suite_version}")
-        self.setAccessibleName("eMolPat program portal")
+        self.setAccessibleName("eMolPat programportal")
         self.setMinimumSize(980, 700)
         self.resize(1200, 800)
         self.setStyleSheet(STYLESHEET)
@@ -303,9 +309,9 @@ class MainWindow(QMainWindow):
 
         brand = QLabel("eMolPat")
         brand.setObjectName("brand")
-        subtitle = QLabel("Molecular Pathology Portal")
+        subtitle = QLabel("Molekylærpatologisk programportal")
         subtitle.setObjectName("brandSubtitle")
-        self.version_label = QLabel(f"Version {self.manifest.suite_version}")
+        self.version_label = QLabel(f"Versjon {self.manifest.suite_version}")
         self.version_label.setObjectName("versionLabel")
         layout.addWidget(brand)
         layout.addWidget(subtitle)
@@ -314,7 +320,9 @@ class MainWindow(QMainWindow):
 
         group = QButtonGroup(self)
         group.setExclusive(True)
-        for index, (label, accessible_description) in enumerate(NAVIGATION):
+        for index, (_unit, label, accessible_description) in enumerate(
+            UNIT_NAVIGATION
+        ):
             button = QPushButton(label)
             button.setObjectName("navigationButton")
             button.setCheckable(True)
@@ -328,13 +336,13 @@ class MainWindow(QMainWindow):
         self.navigation_buttons[0].setChecked(True)
         layout.addStretch(1)
 
-        self.about_button = QPushButton("About eMolPat")
+        self.about_button = QPushButton("Om eMolPat")
         self.about_button.setObjectName("navigationButton")
         self.about_button.setCheckable(True)
         self.about_button.setMinimumHeight(44)
-        self.about_button.setAccessibleName("About eMolPat")
+        self.about_button.setAccessibleName("Om eMolPat")
         self.about_button.setAccessibleDescription(
-            "About eMolPat, the analysis tools, and the developer"
+            "Om eMolPat, analyseverktøyene og utvikleren"
         )
         self.about_button.clicked.connect(
             lambda _checked: self.pages.setCurrentWidget(self.about_page)
@@ -352,29 +360,34 @@ class MainWindow(QMainWindow):
         )
         self.install_progress = QLabel()
         self.install_progress.setObjectName("installProgress")
-        self.install_progress.setAccessibleName("Installation status")
+        self.install_progress.setAccessibleName("Installasjonsstatus")
         self.install_progress.hide()
         layout.addWidget(self.install_progress)
 
         self.pages = QStackedWidget()
-        self.pages.addWidget(self._build_applications_page())
-        self.system_status_page = self._build_system_status_page()
-        self.pages.addWidget(self.system_status_page)
-        self.pages.addWidget(
-            placeholder_page(
-                "Update eMolPat",
-                "The update always installs the portal and all four applications together.",
-                "Check for update",
-            )
+        self.unit_pages: dict[ModuleUnit, QWidget] = {}
+        hemato_page = self._build_applications_page()
+        self.unit_pages[ModuleUnit.HEMATO] = hemato_page
+        self.pages.addWidget(hemato_page)
+        self.solide_page = placeholder_page(
+            "Solide",
+            "Ingen verktøy tilgjengelig ennå.",
         )
-        self.pages.addWidget(
-            placeholder_page(
-                "Help & Support",
-                "Technical support can use the eMolPat log. No clinical data is logged.",
-            )
+        self.unit_pages[ModuleUnit.SOLIDE] = self.solide_page
+        self.pages.addWidget(self.solide_page)
+        self.stat_page = placeholder_page(
+            "LVMS-STAT",
+            "Statistikkverktøyet LVMS-STAT blir tilgjengelig i en senere versjon.",
+            "Kommer senere",
         )
+        self.unit_pages[ModuleUnit.STAT] = self.stat_page
+        self.pages.addWidget(self.stat_page)
         self.about_page = self._build_about_page()
         self.pages.addWidget(self.about_page)
+
+        # Behold installasjonskontrollen internt frem til statusdialogen overtar.
+        self.system_status_page = self._build_system_status_page()
+        self.pages.addWidget(self.system_status_page)
         layout.addWidget(self.pages)
         return container
 
@@ -383,7 +396,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(18)
-        title = QLabel("System Status")
+        title = QLabel("Systemstatus")
         title.setObjectName("pageTitle")
         self.system_summary = QLabel()
         self.system_summary.setObjectName("pageIntro")
@@ -394,7 +407,7 @@ class MainWindow(QMainWindow):
         self.install_button = QPushButton()
         self.install_button.setObjectName("primaryButton")
         self.install_button.setMinimumHeight(44)
-        self.install_button.setAccessibleName("Install or repair eMolPat")
+        self.install_button.setAccessibleName("Installer eller reparer eMolPat")
         self.install_button.clicked.connect(self._request_install)
         layout.addWidget(title)
         layout.addWidget(self.system_summary)
@@ -414,17 +427,17 @@ class MainWindow(QMainWindow):
         layout.setSpacing(16
 
         )
-        title = QLabel("About eMolPat")
+        title = QLabel("Om eMolPat")
         title.setObjectName("pageTitle")
         description = QLabel(
-            "eMolPat is a unified portal for molecular pathology applications. "
-            "The portal provides simple access to HemaFrag Diagnostics, IGH Merge, "
-            "VPM / HTS Tolkning and MPN Tolkning, while each program continues "
-            "to run as an independent tool."
+            "eMolPat er en samlet portal for molekylærpatologiske analyseverktøy. "
+            "Portalen gir enkel tilgang til HemaFrag Diagnostics, IGH Merge, "
+            "VPM / HTS Tolkning og MPN Tolkning, samtidig som hvert program "
+            "fortsetter å kjøre som et selvstendig verktøy."
         )
         description.setObjectName("pageIntro")
         description.setWordWrap(True)
-        creator = QLabel("Developed by Christian Bjørnstad")
+        creator = QLabel("Utviklet av Christian Bjørnstad")
         creator.setObjectName("aboutCreator")
 
         layout.addWidget(title)
@@ -439,9 +452,9 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(20
         )
-        title = QLabel("Applications")
+        title = QLabel("Hemato")
         title.setObjectName("pageTitle")
-        intro = QLabel("Select the analysis application you want to open.")
+        intro = QLabel("Velg analyseprogrammet du ønsker å åpne.")
         intro.setObjectName("pageIntro")
 
         ready = self.health.state is SuiteState.READY
@@ -469,7 +482,12 @@ class MainWindow(QMainWindow):
         grid.setHorizontalSpacing(20)
         grid.setVerticalSpacing(20)
 
-        for index, module in enumerate(self.manifest.modules):
+        hemato_modules = tuple(
+            module
+            for module in self.manifest.modules
+            if module.unit is ModuleUnit.HEMATO
+        )
+        for index, module in enumerate(hemato_modules):
             card = ApplicationCard(module, enabled=ready)
             card.open_button.clicked.connect(
                 lambda _checked, module_id=module.id: self._open_module(module_id)
@@ -492,9 +510,9 @@ class MainWindow(QMainWindow):
         self.system_summary.setText(f"{title}. {detail}")
         self.system_issues.setText("\n".join(self.health.issues))
         action_text = {
-            SuiteState.NOT_INSTALLED: "Install applications",
-            SuiteState.REPAIR_REQUIRED: "Repair installation",
-            SuiteState.UPDATE_AVAILABLE: "Update eMolPat",
+            SuiteState.NOT_INSTALLED: "Installer programmer",
+            SuiteState.REPAIR_REQUIRED: "Reparer installasjon",
+            SuiteState.UPDATE_AVAILABLE: "Oppdater eMolPat",
         }.get(self.health.state)
         self.install_button.setText(action_text or "")
         self.install_button.setVisible(bool(action_text and self.release_available))
@@ -523,7 +541,7 @@ class MainWindow(QMainWindow):
             self.close()
             return
         self.install_progress.setText(
-            f"Installation stopped at: {INSTALL_STAGE_TEXT[result.stage]}"
+            f"Installasjonen stoppet ved: {INSTALL_STAGE_TEXT[result.stage]}"
         )
         self.install_progress.show()
 
