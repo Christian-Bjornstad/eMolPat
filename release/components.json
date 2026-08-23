@@ -2,7 +2,7 @@
   {
     "id": "hemafrag",
     "repository": "https://github.com/Christian-Bjornstad/HemaFrag-Diagnostics.git",
-    "commit": "1bbce920b5841e8083886f3ce41a6c446142fd3d",
+    "commit": "287d6980087290cad0b7272b986ae35e80618641",
     "distribution": "hemafrag-diagnostics",
     "import_name": "hemafrag_diagnostics",
     "entry_point": "hemafrag_diagnostics.__main__:main",
