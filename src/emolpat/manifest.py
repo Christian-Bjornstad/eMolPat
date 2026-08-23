@@ -60,6 +60,7 @@ def _module(data: Any, index: int) -> ModuleSpec:
         entry_point=entry_point,
         icon=_string(values, "icon"),
         description_nb=_string(values, "description_nb"),
+        description_en=_string(values, "description_en"),
         unit=_module_unit(values),
     )
 

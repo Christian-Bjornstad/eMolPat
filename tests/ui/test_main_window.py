@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QLabel, QPushButton
+from PyQt6.QtWidgets import QLabel
 
-from emolpat.domain import HealthReport, InstallResult, SuiteManifest, SuiteState
+from emolpat.domain import (
+    HealthReport,
+    InstallResult,
+    ModuleUnit,
+    SuiteManifest,
+    SuiteState,
+)
 from emolpat.ui.main_window import MainWindow
+from emolpat.ui.widgets import ApplicationCard
 
 
-def test_portal_shows_four_real_modules(
+def test_portal_shows_five_real_modules(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -20,6 +27,7 @@ def test_portal_shows_four_real_modules(
         "igh-merge",
         "vpm-tolkning",
         "mpn-tolkning",
+        "lvms-stat",
     ]
     assert all(not card.module_icon.isNull() for card in window.application_cards)
     assert all(card.open_button.isEnabled() for card in window.application_cards)
@@ -47,7 +55,8 @@ def test_hemato_contains_all_four_real_apps(
     window = MainWindow(manifest, ready_report)
     qtbot.addWidget(window)
 
-    assert [card.module_id for card in window.application_cards] == [
+    hemato_cards = window.unit_pages[ModuleUnit.HEMATO].findChildren(ApplicationCard)
+    assert [card.module_id for card in hemato_cards] == [
         "hemafrag",
         "igh-merge",
         "vpm-tolkning",
@@ -55,7 +64,7 @@ def test_hemato_contains_all_four_real_apps(
     ]
 
 
-def test_solide_is_empty_and_stat_is_coming_later(
+def test_solide_is_empty_and_stat_contains_lvms_stat(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -69,13 +78,32 @@ def test_solide_is_empty_and_stat_is_coming_later(
     stat_copy = " ".join(
         label.text() for label in window.stat_page.findChildren(QLabel)
     )
-    stat_buttons = window.stat_page.findChildren(QPushButton)
-
     assert "Ingen verktøy tilgjengelig ennå" in solide_copy
-    assert "LVMS-STAT" in stat_copy
-    assert len(stat_buttons) == 1
-    assert stat_buttons[0].text() == "Kommer senere"
-    assert not stat_buttons[0].isEnabled()
+    assert "LVMS Statistikk" in stat_copy
+    assert window.card("lvms-stat").open_button.text() == "Åpne app"
+    assert window.card("lvms-stat").open_button.isEnabled()
+
+
+def test_lvms_stat_launches_from_stat_and_blocks_duplicate_clicks(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.show()
+
+    with qtbot.waitSignal(window.module_selected) as signal:
+        qtbot.mouseClick(
+            window.card("lvms-stat").open_button,
+            Qt.MouseButton.LeftButton,
+        )
+
+    assert signal.args == ["lvms-stat"]
+    window.set_module_running("lvms-stat")
+    assert window.card("lvms-stat").open_button.text() == "Kjører"
+    assert not window.card("lvms-stat").open_button.isEnabled()
+    assert window.isVisible()
 
 
 def test_clicking_open_emits_selection_and_keeps_portal_open(

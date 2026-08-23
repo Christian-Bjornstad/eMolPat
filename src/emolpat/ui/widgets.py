@@ -23,6 +23,7 @@ ICON_FILES = {
     "igh-merge": "igh-merge.png",
     "vpm-tolkning": "vpm-tolkning.png",
     "mpn-tolkning": "mpn-tolkning.png",
+    "lvms-stat": "lvms-stat.svg",
 }
 
 

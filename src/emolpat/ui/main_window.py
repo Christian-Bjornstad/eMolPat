@@ -410,7 +410,11 @@ class MainWindow(QMainWindow):
 
         self.pages = QStackedWidget()
         self.unit_pages: dict[ModuleUnit, QWidget] = {}
-        hemato_page = self._build_applications_page()
+        hemato_page = self._build_applications_page(
+            ModuleUnit.HEMATO,
+            "Hemato",
+            show_status=True,
+        )
         self.unit_pages[ModuleUnit.HEMATO] = hemato_page
         self.pages.addWidget(hemato_page)
         self.solide_page = placeholder_page(
@@ -419,10 +423,9 @@ class MainWindow(QMainWindow):
         )
         self.unit_pages[ModuleUnit.SOLIDE] = self.solide_page
         self.pages.addWidget(self.solide_page)
-        self.stat_page = placeholder_page(
-            "LVMS-STAT",
-            "Statistikkverktøyet LVMS-STAT blir tilgjengelig i en senere versjon.",
-            "Kommer senere",
+        self.stat_page = self._build_applications_page(
+            ModuleUnit.STAT,
+            "Statistikk",
         )
         self.unit_pages[ModuleUnit.STAT] = self.stat_page
         self.pages.addWidget(self.stat_page)
@@ -444,8 +447,8 @@ class MainWindow(QMainWindow):
         description = QLabel(
             "eMolPat er en samlet portal for molekylærpatologiske analyseverktøy. "
             "Portalen gir enkel tilgang til HemaFrag Diagnostics, IGH Merge, "
-            "VPM / HTS Tolkning og MPN Tolkning, samtidig som hvert program "
-            "fortsetter å kjøre som et selvstendig verktøy."
+            "VPM / HTS Tolkning, MPN Tolkning og LVMS Statistikk, samtidig "
+            "som hvert program fortsetter å kjøre som et selvstendig verktøy."
         )
         description.setObjectName("pageIntro")
         description.setWordWrap(True)
@@ -465,21 +468,24 @@ class MainWindow(QMainWindow):
         layout.addStretch(1)
         return page
 
-    def _build_applications_page(self) -> QWidget:
+    def _build_applications_page(
+        self,
+        unit: ModuleUnit,
+        title_text: str,
+        *,
+        show_status: bool = False,
+    ) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(20
         )
-        title = QLabel("Hemato")
+        title = QLabel(title_text)
         title.setObjectName("pageTitle")
         intro = QLabel("Velg analyseprogrammet du ønsker å åpne.")
         intro.setObjectName("pageIntro")
 
         ready = self.health.state is SuiteState.READY
-        self.status_banner = StatusControl(self.health)
-        self.status_banner.clicked.connect(self.status_dialog.show)
-
         heading_copy = QVBoxLayout()
         heading_copy.setSpacing(8)
         heading_copy.addWidget(title)
@@ -488,10 +494,13 @@ class MainWindow(QMainWindow):
         heading = QHBoxLayout()
         heading.setSpacing(24)
         heading.addLayout(heading_copy, 1)
-        heading.addWidget(
-            self.status_banner,
-            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
-        )
+        if show_status:
+            self.status_banner = StatusControl(self.health)
+            self.status_banner.clicked.connect(self.status_dialog.show)
+            heading.addWidget(
+                self.status_banner,
+                alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
+            )
         layout.addLayout(heading)
 
         cards = QWidget()
@@ -501,12 +510,10 @@ class MainWindow(QMainWindow):
         grid.setHorizontalSpacing(20)
         grid.setVerticalSpacing(20)
 
-        hemato_modules = tuple(
-            module
-            for module in self.manifest.modules
-            if module.unit is ModuleUnit.HEMATO
+        unit_modules = tuple(
+            module for module in self.manifest.modules if module.unit is unit
         )
-        for index, module in enumerate(hemato_modules):
+        for index, module in enumerate(unit_modules):
             card = ApplicationCard(module, enabled=ready)
             card.open_button.clicked.connect(
                 lambda _checked, module_id=module.id: self._open_module(module_id)

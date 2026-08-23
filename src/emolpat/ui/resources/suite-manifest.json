@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "suite_version": "1.0.7-test",
+  "suite_version": "1.1.0",
   "python_requires": ">=3.14,<3.15",
   "modules": [
     {
@@ -12,6 +12,7 @@
       "entry_point": "hemafrag_diagnostics.__main__:main",
       "icon": "icons/hemafrag.png",
       "description_nb": "Fragmentanalyse, kvalitetskontroll og rapportering.",
+      "description_en": "Fragment analysis, quality control, and reporting.",
       "unit": "hemato"
     },
     {
@@ -23,6 +24,7 @@
       "entry_point": "igh_merge.__main__:main",
       "icon": "icons/igh-merge.png",
       "description_nb": "Sammenslåing og kontroll av IGHV-SHM-resultater.",
+      "description_en": "Merge and quality control of IGHV-SHM results.",
       "unit": "hemato"
     },
     {
@@ -34,6 +36,7 @@
       "entry_point": "archer_processor.__main__:main",
       "icon": "icons/vpm-tolkning.png",
       "description_nb": "Variantgjennomgang, evidensinnhenting og rapportering.",
+      "description_en": "Variant review, evidence collection, and reporting.",
       "unit": "hemato"
     },
     {
@@ -45,7 +48,20 @@
       "entry_point": "mpn_tolkning.__main__:main",
       "icon": "icons/mpn-tolkning.png",
       "description_nb": "Evidensgjennomgang for JAK2, CALR og MPL.",
+      "description_en": "Evidence review for JAK2, CALR, and MPL.",
       "unit": "hemato"
+    },
+    {
+      "id": "lvms-stat",
+      "name": "LVMS Statistikk",
+      "distribution": "lvms-stat",
+      "version": "2.0.0",
+      "import_name": "lvms_stat",
+      "entry_point": "lvms_stat.portal:main",
+      "icon": "icons/lvms-stat.svg",
+      "description_nb": "Henting og behandling av aktivitetsdata fra LVMS.",
+      "description_en": "Retrieval and processing of activity data from LVMS.",
+      "unit": "stat"
     }
   ],
   "files": []

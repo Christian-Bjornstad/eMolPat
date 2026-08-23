@@ -52,6 +52,7 @@ class ModuleSpec:
     entry_point: str
     icon: str
     description_nb: str
+    description_en: str
     unit: ModuleUnit
 
 
