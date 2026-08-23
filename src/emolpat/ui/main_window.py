@@ -1,4 +1,4 @@
-"""Main eMolPat portal window with English UI and modern design."""
+"""Hovedvindu for den norske, kliniske eMolPat-portalen."""
 
 from __future__ import annotations
 
@@ -25,15 +25,15 @@ from emolpat.domain import (
     SuiteManifest,
     SuiteState,
 )
+from emolpat.ui.status_dialog import SystemStatusDialog
 from emolpat.ui.translations import (
     INSTALL_COMPLETE_TEXT,
     INSTALL_STAGE_TEXT,
-    STATE_TEXT,
     UNIT_NAVIGATION,
 )
-from emolpat.ui.widgets import ApplicationCard, StatusBanner, placeholder_page
+from emolpat.ui.widgets import ApplicationCard, StatusControl, placeholder_page
 
-STYLESHEET = """/* eMolPat Portal - Modern English Frontend Design */
+STYLESHEET = """/* eMolPat klinisk lys portal */
  
 /* Color Palette:
    Primary: #1A1F2E (deep midnight blue - trust, professionalism)
@@ -44,9 +44,9 @@ STYLESHEET = """/* eMolPat Portal - Modern English Frontend Design */
    Neutral: #F5F6FA (light surface - readability)
 */
 
-QMainWindow, QWidget#shell { 
-    background: #1A1F2E; 
-    color: #F5F6FA; 
+QMainWindow, QWidget#shell {
+    background: #EDF4F6;
+    color: #12383B;
 }
 
 /* Sidebar */
@@ -112,6 +112,36 @@ QLabel#aboutCreator {
 }
 
 /* Status Banner */
+QPushButton#statusControl {
+    background: #F4F7F8;
+    color: #17393B;
+    border: 1px solid #B7C9CC;
+    border-radius: 7px;
+    padding: 9px 14px;
+    font-weight: 700;
+}
+QPushButton#statusControl:hover,
+QPushButton#statusControl:focus {
+    border: 2px solid #1D7A78;
+    background: #FFFFFF;
+}
+QPushButton#statusControl[state="ready"] {
+    background: #E8F5EF;
+    border-color: #75B596;
+}
+QPushButton#statusControl[state="update_available"] {
+    background: #FFF7E6;
+    border-color: #D6A638;
+}
+QPushButton#statusControl[state="repair_required"] {
+    background: #FCEDEE;
+    border-color: #C96A70;
+}
+QPushButton#statusControl[state="not_installed"],
+QPushButton#statusControl[state="unavailable"] {
+    background: #F3F0F0;
+    border-color: #9B7779;
+}
 QFrame#statusBanner { 
     background: #FFF7E6; 
     border: 1px solid #E6C66A; 
@@ -286,8 +316,8 @@ class MainWindow(QMainWindow):
 
     def show_install_stage(self, stage: str) -> None:
         """Expose plain-language progress for a suite-level install operation."""
-        self.install_progress.setText(INSTALL_STAGE_TEXT[stage])
-        self.install_progress.show()
+        self.status_dialog.show_install_stage(stage)
+        self.status_dialog.show()
 
     def _build_ui(self) -> None:
         shell = QWidget()
@@ -356,13 +386,16 @@ class MainWindow(QMainWindow):
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(36, 32, 36, 32)
-        layout.setSpacing(16
+        layout.setSpacing(16)
+        self.status_dialog = SystemStatusDialog(
+            self.health,
+            self.release_available,
+            self,
         )
-        self.install_progress = QLabel()
-        self.install_progress.setObjectName("installProgress")
+        self.status_dialog.action_requested.connect(self._request_install)
+        self.install_button = self.status_dialog.action_button
+        self.install_progress = self.status_dialog.progress_label
         self.install_progress.setAccessibleName("Installasjonsstatus")
-        self.install_progress.hide()
-        layout.addWidget(self.install_progress)
 
         self.pages = QStackedWidget()
         self.unit_pages: dict[ModuleUnit, QWidget] = {}
@@ -385,40 +418,8 @@ class MainWindow(QMainWindow):
         self.about_page = self._build_about_page()
         self.pages.addWidget(self.about_page)
 
-        # Behold installasjonskontrollen internt frem til statusdialogen overtar.
-        self.system_status_page = self._build_system_status_page()
-        self.pages.addWidget(self.system_status_page)
         layout.addWidget(self.pages)
         return container
-
-    def _build_system_status_page(self) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(18)
-        title = QLabel("Systemstatus")
-        title.setObjectName("pageTitle")
-        self.system_summary = QLabel()
-        self.system_summary.setObjectName("pageIntro")
-        self.system_summary.setWordWrap(True)
-        self.system_issues = QLabel()
-        self.system_issues.setObjectName("systemIssues")
-        self.system_issues.setWordWrap(True)
-        self.install_button = QPushButton()
-        self.install_button.setObjectName("primaryButton")
-        self.install_button.setMinimumHeight(44)
-        self.install_button.setAccessibleName("Installer eller reparer eMolPat")
-        self.install_button.clicked.connect(self._request_install)
-        layout.addWidget(title)
-        layout.addWidget(self.system_summary)
-        layout.addWidget(self.system_issues)
-        layout.addWidget(
-            self.install_button,
-            alignment=Qt.AlignmentFlag.AlignLeft,
-        )
-        layout.addStretch(1)
-        self._update_system_status()
-        return page
 
     def _build_about_page(self) -> QWidget:
         page = QWidget()
@@ -439,10 +440,17 @@ class MainWindow(QMainWindow):
         description.setWordWrap(True)
         creator = QLabel("Utviklet av Christian Bjørnstad")
         creator.setObjectName("aboutCreator")
+        guidance = QLabel(
+            "Diagnostikk viser teknisk systemstatus uten å vise analysedata. "
+            "Ved behov kan Teknisk hjelp bruke eMolPat-loggen til feilsøking."
+        )
+        guidance.setObjectName("pageIntro")
+        guidance.setWordWrap(True)
 
         layout.addWidget(title)
         layout.addWidget(description)
         layout.addWidget(creator)
+        layout.addWidget(guidance)
         layout.addStretch(1)
         return page
 
@@ -458,8 +466,8 @@ class MainWindow(QMainWindow):
         intro.setObjectName("pageIntro")
 
         ready = self.health.state is SuiteState.READY
-        status_title, status_detail = STATE_TEXT[self.health.state.value]
-        self.status_banner = StatusBanner(status_title, status_detail, ready)
+        self.status_banner = StatusControl(self.health)
+        self.status_banner.clicked.connect(self.status_dialog.show)
 
         heading_copy = QVBoxLayout()
         heading_copy.setSpacing(8)
@@ -505,32 +513,19 @@ class MainWindow(QMainWindow):
         self.set_install_running(True)
         self.install_requested.emit()
 
-    def _update_system_status(self) -> None:
-        title, detail = STATE_TEXT[self.health.state.value]
-        self.system_summary.setText(f"{title}. {detail}")
-        self.system_issues.setText("\n".join(self.health.issues))
-        action_text = {
-            SuiteState.NOT_INSTALLED: "Installer programmer",
-            SuiteState.REPAIR_REQUIRED: "Reparer installasjon",
-            SuiteState.UPDATE_AVAILABLE: "Oppdater eMolPat",
-        }.get(self.health.state)
-        self.install_button.setText(action_text or "")
-        self.install_button.setVisible(bool(action_text and self.release_available))
-
     def set_install_running(self, running: bool) -> None:
         self._install_running = running
-        self.install_button.setEnabled(not running)
+        self.status_dialog.set_install_running(running)
         if running:
-            self.pages.setCurrentWidget(self.system_status_page)
+            self.status_dialog.show()
 
     def set_health(self, health: HealthReport) -> None:
         self.health = health
         ready = health.state is SuiteState.READY
-        title, detail = STATE_TEXT[health.state.value]
-        self.status_banner.set_status(title, detail, ready)
+        self.status_banner.set_health(health)
+        self.status_dialog.set_health(health)
         for card in self.application_cards:
             card.set_enabled(ready)
-        self._update_system_status()
 
     def finish_install(self, result: InstallResult, health: HealthReport) -> None:
         self.set_install_running(False)
@@ -546,9 +541,7 @@ class MainWindow(QMainWindow):
         self.install_progress.show()
 
     def _open_module(self, module_id: str) -> None:
-            self.module_selected.emit(module_id)
-            # Do NOT close the portal – keep it running so the user can
-            # close the app or press a portal button to return later.
+        self.module_selected.emit(module_id)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Keep the portal alive until the atomic installation has finished."""

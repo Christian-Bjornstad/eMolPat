@@ -232,6 +232,38 @@ def test_ready_state_is_a_compact_top_status_box(
     assert window.status_banner.detail_label.isHidden()
 
 
+def test_status_control_opens_compact_system_dialog(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.show()
+
+    qtbot.mouseClick(window.status_banner, Qt.MouseButton.LeftButton)
+
+    assert window.status_dialog.isVisibleTo(window)
+    assert window.status_banner.maximumWidth() <= 220
+
+
+def test_clinical_light_stylesheet_has_focus_and_semantic_states(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    stylesheet = window.styleSheet()
+    assert "#EDF4F6" in stylesheet
+    assert "#073F43" in stylesheet
+    assert ":focus" in stylesheet
+    assert '[state="ready"]' in stylesheet
+    assert '[state="update_available"]' in stylesheet
+    assert '[state="repair_required"]' in stylesheet
+
+
 def test_not_installed_shows_install_action_and_disables_launch(
     qtbot,
     manifest: SuiteManifest,

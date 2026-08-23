@@ -15,7 +15,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from emolpat.domain import ModuleSpec
+from emolpat.domain import HealthReport, ModuleSpec
+from emolpat.ui.translations import STATE_TEXT
 
 ICON_FILES = {
     "hemafrag": "hemafrag.png",
@@ -31,40 +32,29 @@ def module_icon(module_id: str) -> QIcon:
     return QIcon(str(path))
 
 
-class StatusBanner(QFrame):
-    """Compact portal health status with text and iconography."""
+class StatusControl(QPushButton):
+    """Compact keyboard-accessible control that opens system status."""
 
-    def __init__(self, title: str, detail: str, ready: bool) -> None:
+    def __init__(self, health: HealthReport) -> None:
         super().__init__()
-        self.setObjectName("statusBanner")
-        self.setProperty("ready", ready)
+        self.setObjectName("statusControl")
         self.setMaximumWidth(220)
+        self.setMinimumHeight(42)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        symbol = QLabel("✓" if ready else "!")
-        symbol.setObjectName("statusSymbol")
-        symbol.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        symbol.setAccessibleName("Approved" if ready else "Action required")
-
-        self.title_label = QLabel(title)
-        self.title_label.setObjectName("statusTitle")
-        self.detail_label = QLabel(detail)
+        self.detail_label = QLabel(self)
         self.detail_label.setObjectName("statusDetail")
         self.detail_label.setWordWrap(True)
         self.detail_label.hide()
+        self.set_health(health)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 10, 14, 10)
-        layout.setSpacing(10)
-        layout.addWidget(symbol)
-        layout.addWidget(self.title_label)
-
-    def text(self) -> str:
-        return self.title_label.text()
-
-    def set_status(self, title: str, detail: str, ready: bool) -> None:
-        self.title_label.setText(title)
+    def set_health(self, health: HealthReport) -> None:
+        title, detail = STATE_TEXT[health.state.value]
+        self.setText(title)
         self.detail_label.setText(detail)
-        self.setProperty("ready", ready)
+        self.setProperty("state", health.state.value)
+        self.setAccessibleName(f"Systemstatus: {title}")
+        self.setAccessibleDescription(detail)
         self.style().unpolish(self)
         self.style().polish(self)
 
