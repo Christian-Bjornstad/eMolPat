@@ -21,6 +21,7 @@ MODULE = ModuleSpec(
     entry_point="hemafrag_diagnostics.__main__:main",
     icon="icons/hemafrag.svg",
     description_nb="Fragmentanalyse",
+    description_en="Fragment analysis",
     unit=ModuleUnit.HEMATO,
 )
 
@@ -81,8 +82,8 @@ def test_manager_rejects_duplicate_but_allows_different_module(
     children = iter((FakeChild(), FakeChild()))
     manager = ApplicationProcessManager(spawn=lambda _argv: next(children))
 
-    assert manager.start(manifest.module("hemafrag")).started
-    duplicate = manager.start(manifest.module("hemafrag"))
+    assert manager.start(manifest.module("lvms-stat")).started
+    duplicate = manager.start(manifest.module("lvms-stat"))
     assert not duplicate.started
     assert duplicate.error_code == "already_running"
     assert manager.start(manifest.module("igh-merge")).started
@@ -91,11 +92,11 @@ def test_manager_rejects_duplicate_but_allows_different_module(
 def test_poll_removes_finished_children(manifest: SuiteManifest) -> None:
     child = FakeChild()
     manager = ApplicationProcessManager(spawn=lambda _argv: child)
-    manager.start(manifest.module("mpn-tolkning"))
+    manager.start(manifest.module("lvms-stat"))
     child.exit_code = 0
 
-    assert manager.poll() == (ProcessExit("mpn-tolkning", 0),)
-    assert not manager.is_running("mpn-tolkning")
+    assert manager.poll() == (ProcessExit("lvms-stat", 0),)
+    assert not manager.is_running("lvms-stat")
 
 
 def test_stop_monitoring_never_terminates_child(manifest: SuiteManifest) -> None:

@@ -9,7 +9,7 @@ UNIT_NAVIGATION = (
 )
 
 STATE_TEXT = {
-    "ready": ("Klar til bruk", "Alle fire programmer er verifisert."),
+    "ready": ("Klar til bruk", "Alle fem programmer er verifisert."),
     "not_installed": (
         "Programmer må installeres",
         "Installer hele eMolPat-pakken før programmene åpnes.",
