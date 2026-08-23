@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from emolpat.domain import ModuleSpec, ModuleUnit
-from emolpat.launch import resolve_entry_point, run_handoff
+from emolpat.domain import ModuleSpec, ModuleUnit, SuiteManifest
+from emolpat.launch import (
+    ApplicationProcessManager,
+    ProcessExit,
+    resolve_entry_point,
+)
+from emolpat.manifest import load_manifest
 
 MODULE = ModuleSpec(
     id="hemafrag",
@@ -16,6 +23,19 @@ MODULE = ModuleSpec(
     description_nb="Fragmentanalyse",
     unit=ModuleUnit.HEMATO,
 )
+
+
+@pytest.fixture
+def manifest() -> SuiteManifest:
+    return load_manifest(Path(__file__).parent / "fixtures" / "valid-manifest.json")
+
+
+class FakeChild:
+    def __init__(self, exit_code: int | None = None) -> None:
+        self.exit_code = exit_code
+
+    def poll(self) -> int | None:
+        return self.exit_code
 
 
 def test_resolve_entry_point_returns_a_callable() -> None:
@@ -38,44 +58,64 @@ def test_resolve_entry_point_rejects_non_callable_attributes() -> None:
         resolve_entry_point("emolpat.domain:APPROVED_MODULE_IDS")
 
 
-def test_handoff_calls_declared_entrypoint_after_portal_exit() -> None:
-    events: list[str] = []
-
-    result = run_handoff(
-        MODULE,
-        resolver=lambda value: lambda: events.append(f"started:{value}"),
+def test_manager_starts_trusted_child_command() -> None:
+    commands: list[tuple[str, ...]] = []
+    child = FakeChild()
+    manager = ApplicationProcessManager(
+        executable="python-felles.exe",
+        spawn=lambda argv: commands.append(argv) or child,
     )
 
-    assert events == [f"started:{MODULE.entry_point}"]
+    result = manager.start(MODULE)
+
     assert result.started
-    assert result.error_code is None
+    assert commands == [
+        ("python-felles.exe", "-m", "emolpat.module_runner", MODULE.id)
+    ]
+    assert manager.running_module_ids == frozenset({MODULE.id})
 
 
-def test_handoff_reports_import_failure_without_starting() -> None:
-    def fail_resolution(_value: str):
-        raise ImportError("dependency unavailable")
+def test_manager_rejects_duplicate_but_allows_different_module(
+    manifest: SuiteManifest,
+) -> None:
+    children = iter((FakeChild(), FakeChild()))
+    manager = ApplicationProcessManager(spawn=lambda _argv: next(children))
 
-    result = run_handoff(MODULE, resolver=fail_resolution)
+    assert manager.start(manifest.module("hemafrag")).started
+    duplicate = manager.start(manifest.module("hemafrag"))
+    assert not duplicate.started
+    assert duplicate.error_code == "already_running"
+    assert manager.start(manifest.module("igh-merge")).started
+
+
+def test_poll_removes_finished_children(manifest: SuiteManifest) -> None:
+    child = FakeChild()
+    manager = ApplicationProcessManager(spawn=lambda _argv: child)
+    manager.start(manifest.module("mpn-tolkning"))
+    child.exit_code = 0
+
+    assert manager.poll() == (ProcessExit("mpn-tolkning", 0),)
+    assert not manager.is_running("mpn-tolkning")
+
+
+def test_stop_monitoring_never_terminates_child(manifest: SuiteManifest) -> None:
+    child = FakeChild()
+    manager = ApplicationProcessManager(spawn=lambda _argv: child)
+    manager.start(manifest.module("hemafrag"))
+
+    manager.stop_monitoring()
+
+    assert manager.running_module_ids == frozenset()
+
+
+def test_manager_reports_process_start_failure() -> None:
+    def fail_spawn(_argv: tuple[str, ...]) -> FakeChild:
+        raise OSError("cannot create process")
+
+    manager = ApplicationProcessManager(spawn=fail_spawn)
+
+    result = manager.start(MODULE)
 
     assert not result.started
-    assert result.error_code == "entrypoint_import_failed"
-    assert result.module_id == MODULE.id
-    assert "dependency unavailable" in (result.message or "")
-
-
-def test_handoff_reports_invalid_entrypoint_without_starting() -> None:
-    def fail_resolution(_value: str):
-        raise TypeError("not callable")
-
-    result = run_handoff(MODULE, resolver=fail_resolution)
-
-    assert not result.started
-    assert result.error_code == "entrypoint_invalid"
-
-
-def test_handoff_does_not_hide_errors_after_application_start() -> None:
-    def fail_after_start() -> None:
-        raise RuntimeError("application crashed")
-
-    with pytest.raises(RuntimeError, match="application crashed"):
-        run_handoff(MODULE, resolver=lambda _value: fail_after_start)
+    assert result.error_code == "process_start_failed"
+    assert not manager.is_running(MODULE.id)
