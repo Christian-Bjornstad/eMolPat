@@ -28,7 +28,7 @@ def test_every_component_has_an_immutable_revision() -> None:
         "mpn_tolkning",
         "lvms_stat",
     }
-    assert components[-1].commit == "aabe274f4585af132c63c9601a70af6339e71b51"
+    assert components[-1].commit == "0c83bd87aa4f2d46e825aec0d5e5e003fa85d40a"
 
 
 def test_component_entrypoints_are_callable_paths() -> None:
