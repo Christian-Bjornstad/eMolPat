@@ -19,6 +19,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       QT_QPA_PLATFORM: minimal
+      # Keep the first component failure visible even if a later Qt teardown aborts.
+      PYTEST_ADDOPTS: "-x -vv"
     steps:
       - uses: actions/checkout@v4
         with:
