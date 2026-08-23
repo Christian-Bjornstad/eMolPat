@@ -54,7 +54,7 @@ def _component(value: Any, index: int) -> ComponentSpec:
 
 
 def load_components(path: Path) -> tuple[ComponentSpec, ...]:
-    """Load the four immutable repositories used to assemble one suite."""
+    """Load the immutable repositories used to assemble one suite."""
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:

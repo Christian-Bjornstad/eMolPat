@@ -10,6 +10,7 @@ APPROVED_MODULE_IDS = (
     "igh-merge",
     "vpm-tolkning",
     "mpn-tolkning",
+    "lvms-stat",
 )
 
 
@@ -56,7 +57,7 @@ class ModuleSpec:
 
 @dataclass(frozen=True)
 class SuiteManifest:
-    """Immutable release contract for the portal and its four modules."""
+    """Immutable release contract for the portal and its approved modules."""
 
     schema_version: int
     suite_version: str

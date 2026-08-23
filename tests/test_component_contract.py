@@ -18,6 +18,7 @@ def test_every_component_has_an_immutable_revision() -> None:
         "igh-merge",
         "vpm-tolkning",
         "mpn-tolkning",
+        "lvms-stat",
     ]
     assert all(re.fullmatch(r"[0-9a-f]{40}", item.commit) for item in components)
     assert {item.import_name for item in components} == {
@@ -25,7 +26,9 @@ def test_every_component_has_an_immutable_revision() -> None:
         "igh_merge",
         "archer_processor",
         "mpn_tolkning",
+        "lvms_stat",
     }
+    assert components[-1].commit == "aabe274f4585af132c63c9601a70af6339e71b51"
 
 
 def test_component_entrypoints_are_callable_paths() -> None:
@@ -36,6 +39,7 @@ def test_component_entrypoints_are_callable_paths() -> None:
         "igh_merge.__main__:main",
         "archer_processor.__main__:main",
         "mpn_tolkning.__main__:main",
+        "lvms_stat.portal:main",
     }
 
 

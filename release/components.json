@@ -34,5 +34,14 @@
     "import_name": "mpn_tolkning",
     "entry_point": "mpn_tolkning.__main__:main",
     "test_command": ["python", "-m", "pytest", "-q"]
+  },
+  {
+    "id": "lvms-stat",
+    "repository": "https://github.com/Christian-Bjornstad/LVMS-STAT.git",
+    "commit": "aabe274f4585af132c63c9601a70af6339e71b51",
+    "distribution": "lvms-stat",
+    "import_name": "lvms_stat",
+    "entry_point": "lvms_stat.portal:main",
+    "test_command": ["python", "-m", "pytest", "-q"]
   }
 ]
