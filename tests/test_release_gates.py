@@ -6,12 +6,31 @@ from subprocess import CompletedProcess
 
 import pytest
 
+from scripts.build_suite import COMPONENT_DIRECTORIES
 from scripts.smoke_installed_suite import smoke_installed_suite
+from scripts.test_components import editable_spec
 from scripts.test_components import test_components as run_component_tests
+
+
+def test_component_gate_installs_declared_development_extra(tmp_path: Path) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname="demo"\nversion="1"\n'
+        '[project.optional-dependencies]\ndev=["pypdf"]\n',
+        encoding="utf-8",
+    )
+
+    assert editable_spec(tmp_path) == f"{tmp_path}[dev]"
 
 
 def test_component_gate_runs_declared_commands_with_active_python(tmp_path: Path) -> None:
     calls = []
+    for directory in COMPONENT_DIRECTORIES.values():
+        source = tmp_path / directory
+        source.mkdir()
+        (source / "pyproject.toml").write_text(
+            '[project]\nname="demo"\nversion="1"\n',
+            encoding="utf-8",
+        )
 
     def runner(command, **kwargs):
         calls.append((command, kwargs))

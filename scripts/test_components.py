@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import tomllib
 from collections.abc import Callable
 from pathlib import Path
 
@@ -19,6 +20,14 @@ from scripts.build_suite import COMPONENT_DIRECTORIES
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
+def editable_spec(source: Path) -> str:
+    """Include a component's declared test dependencies when available."""
+    document = tomllib.loads((source / "pyproject.toml").read_text(encoding="utf-8"))
+    optional = document.get("project", {}).get("optional-dependencies", {})
+    suffix = "[dev]" if "dev" in optional else ""
+    return f"{source}{suffix}"
+
+
 def test_components(
     component_file: Path,
     component_root: Path,
@@ -30,7 +39,14 @@ def test_components(
     for component in load_components(component_file):
         source = component_root / COMPONENT_DIRECTORIES[component.id]
         runner(
-            (python_executable, "-m", "pip", "install", "-e", str(source)),
+            (
+                python_executable,
+                "-m",
+                "pip",
+                "install",
+                "-e",
+                editable_spec(source),
+            ),
             check=True,
         )
         command = component.test_command
