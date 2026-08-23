@@ -33,6 +33,7 @@ COMPONENT_DIRECTORIES = {
     "igh-merge": "IGH",
     "vpm-tolkning": "Archer-prosess",
     "mpn-tolkning": "MPN-Tolkning",
+    "lvms-stat": "LVMS-STAT",
 }
 APPROVED_DISTRIBUTIONS = {
     "emolpat",
@@ -40,6 +41,7 @@ APPROVED_DISTRIBUTIONS = {
     "igh-merge",
     "archer-prosess",
     "mpn-tolkning",
+    "lvms-stat",
 }
 
 
@@ -110,7 +112,7 @@ def assemble_release(
             raise RuntimeError(f"duplicate package wheel: {normalized}")
         package_versions[normalized] = str(wheel_version)
     if set(package_versions) != APPROVED_DISTRIBUTIONS:
-        raise RuntimeError("release must contain exactly the five approved distributions")
+        raise RuntimeError("release must contain exactly the six approved distributions")
 
     template = load_manifest(
         PROJECT_ROOT / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json"
@@ -297,7 +299,7 @@ def build_suite(
     component_root: Path,
     target: PythonTarget = PYTHON_314,
 ) -> Path:
-    """Build five package wheels, collect Windows dependencies, and assemble."""
+    """Build six package wheels, collect Windows dependencies, and assemble."""
     if not validate_manifest_consistency(version):
         raise ValueError(
             f"suite version {version!r} does not match the bundled manifest"
@@ -312,8 +314,8 @@ def build_suite(
         _build_wheel(PROJECT_ROOT, package_dir)
         for source in component_sources:
             _build_wheel(source, package_dir)
-        if len(list(package_dir.glob("*.whl"))) != 5:
-            raise RuntimeError("suite build must produce exactly five package wheels")
+        if len(list(package_dir.glob("*.whl"))) != 6:
+            raise RuntimeError("suite build must produce exactly six package wheels")
         _download_dependencies(dependency_dir, target)
         _validate_dependency_matrix(
             list(package_dir.glob("*.whl")),
