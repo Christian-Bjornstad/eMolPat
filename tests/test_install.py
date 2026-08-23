@@ -232,3 +232,25 @@ def test_subprocess_denial_falls_back_to_in_process_pip(monkeypatch) -> None:
 
     assert run_command(command) == 0
     assert calls == [("install", "x")]
+
+
+def test_ensurepip_bootstrap_is_skipped_when_pip_is_already_available(
+    monkeypatch,
+) -> None:
+    calls = []
+    monkeypatch.setattr("emolpat.install.find_spec", lambda _name: object(), raising=False)
+    monkeypatch.setattr(
+        "emolpat.install.subprocess.run",
+        lambda *_args, **_kwargs: calls.append(True),
+    )
+    command = type(
+        "CommandLike",
+        (),
+        {
+            "stage": "ensurepip-bootstrap",
+            "argv": (sys.executable, "-m", "ensurepip", "--user", "--upgrade"),
+        },
+    )()
+
+    assert run_command(command) == 0
+    assert calls == []

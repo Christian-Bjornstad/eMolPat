@@ -12,6 +12,7 @@ import sys
 from collections.abc import Callable
 from dataclasses import asdict
 from datetime import UTC, datetime
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Protocol
 
@@ -85,18 +86,17 @@ def build_pip_commands(
 
 def run_pip_in_process(arguments: tuple[str, ...]) -> int:
     """Invoke pip without a child process for restricted Python FELLES hosts."""
-    # First ensure pip is available via ensurepip (critical for Microsoft Store Python)
-    try:
-        import subprocess
-        subprocess.run(
-            (sys.executable, "-m", "ensurepip", "--user", "--upgrade"),
-            check=False,
-            stdin=subprocess.DEVNULL,
-        )
-    except (OSError, subprocess.SubprocessError):
-        # pip may already be available even when the optional bootstrap is denied.
-        pass
-    
+    if find_spec("pip") is None:
+        try:
+            subprocess.run(
+                (sys.executable, "-m", "ensurepip", "--user", "--upgrade"),
+                check=False,
+                stdin=subprocess.DEVNULL,
+            )
+        except (OSError, subprocess.SubprocessError):
+            # The later import reports the controlled installation failure.
+            pass
+
     from pip._internal.cli.main import main as pip_main
 
     return pip_main(list(arguments))
@@ -104,6 +104,11 @@ def run_pip_in_process(arguments: tuple[str, ...]) -> int:
 
 def run_command(command: Command) -> int:
     """Prefer an isolated child process and fall back only when creation is denied."""
+    if (
+        getattr(command, "stage", None) == "ensurepip-bootstrap"
+        and find_spec("pip") is not None
+    ):
+        return 0
     try:
         completed = subprocess.run(
             command.argv,
