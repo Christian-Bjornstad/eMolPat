@@ -14,6 +14,8 @@ from email.parser import Parser
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 if str(PROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
@@ -24,6 +26,7 @@ from emolpat.components import load_components
 from emolpat.domain import FileDigest
 from emolpat.integrity import sha256_file
 from emolpat.manifest import load_manifest
+from scripts.validate_manifest_consistency import validate_manifest_consistency
 
 COMPONENT_DIRECTORIES = {
     "hemafrag": "HemaFrag-Diagnostics",
@@ -295,6 +298,10 @@ def build_suite(
     target: PythonTarget = PYTHON_314,
 ) -> Path:
     """Build five package wheels, collect Windows dependencies, and assemble."""
+    if not validate_manifest_consistency(version):
+        raise ValueError(
+            f"suite version {version!r} does not match the bundled manifest"
+        )
     component_sources = assert_clean_pinned_checkouts(component_root.resolve())
     with tempfile.TemporaryDirectory(prefix="emolpat-build-") as temporary:
         staging = Path(temporary)

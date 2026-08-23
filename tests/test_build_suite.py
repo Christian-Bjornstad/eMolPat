@@ -181,6 +181,12 @@ def test_build_suite_passes_target_to_download_and_assembly(
     seen: list[tuple[str, object]] = []
     monkeypatch.setattr(
         builder,
+        "validate_manifest_consistency",
+        lambda _version: True,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        builder,
         "assert_clean_pinned_checkouts",
         lambda _root: [Path(str(index)) for index in range(4)],
     )
@@ -212,3 +218,27 @@ def test_build_suite_passes_target_to_download_and_assembly(
 
     assert result == tmp_path / "dist" / "release"
     assert seen == [("download", PYTHON_314), ("assemble", PYTHON_314)]
+
+
+def test_build_suite_rejects_version_before_building_components(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        builder,
+        "validate_manifest_consistency",
+        lambda _version: False,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        builder,
+        "assert_clean_pinned_checkouts",
+        lambda _root: pytest.fail("component checkout must not be inspected"),
+    )
+
+    with pytest.raises(ValueError, match="does not match the bundled manifest"):
+        builder.build_suite(
+            "1.0.8-test",
+            tmp_path / "dist",
+            tmp_path / "components",
+        )

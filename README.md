@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="eMolPat suite 1.0.0" src="https://img.shields.io/badge/eMolPat-Suite%201.0.0-0c6669">
+  <img alt="eMolPat suite 1.0.7-test" src="https://img.shields.io/badge/eMolPat-Suite%201.0.7--test-0c6669">
   <img alt="Python 3.12 through 3.14" src="https://img.shields.io/badge/Python-3.12%E2%80%933.14-3776AB?logo=python&amp;logoColor=white">
   <img alt="PyQt6 desktop portal" src="https://img.shields.io/badge/Desktop-PyQt6-41CD52?logo=qt&amp;logoColor=white">
   <img alt="Windows workstation" src="https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows&amp;logoColor=white">
@@ -35,7 +35,7 @@ Download the GitHub Release asset named `eMolPat-<version>-windows.zip`. Do **no
 
 ## Overview
 
-eMolPat packages four existing molecular-pathology applications as one locally installed Windows suite. Laboratory staff open a single Norwegian portal, choose the required application, and continue in that application's established standalone workflow. The portal closes completely before the selected application starts, avoiding competing Qt event loops and preserving each tool's validation boundary.
+eMolPat packages four existing molecular-pathology applications as one locally installed Windows suite. Laboratory staff open a single Norwegian portal, choose the required application, and continue in that application's established standalone workflow. Each application starts in a separate Python FELLES process while the portal remains open and responsive.
 
 <p align="center">
   <img src="docs/assets/portal-overview-v2.png" width="920" alt="Updated eMolPat portal showing the four available molecular pathology applications">
@@ -45,7 +45,7 @@ eMolPat packages four existing molecular-pathology applications as one locally i
 |---|---|
 | Portal | Norwegian PyQt6 dashboard with canonical application icons |
 | Applications | HemaFrag Diagnostics, IGH Merge, VPM/HTS Tolkning, and MPN Tolkning |
-| Launch model | Portal exits, releases `QApplication`, then invokes the approved standalone entry point |
+| Launch model | Portal remains open while each approved application runs in a separate process |
 | Installation | Complete offline `pip --user` installation through Python FELLES |
 | Release trust | Immutable manifest, exact component commits, SHA-256 checksums, and a hashed dependency lock |
 | Recovery | Health states, repair, retained-version rollback, and redacted rotating logs |
@@ -80,14 +80,15 @@ flowchart LR
     C --> D["Per-user installation"]
     D --> E["eMolPat health verification"]
     E --> F["Norwegian portal"]
-    F -->|select one app| G["Portal closes completely"]
-    G --> H["Standalone application starts"]
+    F -->|select one app| G["Trusted child runner"]
+    G --> H["Standalone application process"]
+    F --> I["Portal remains open"]
 ```
 
 An approved release contains:
 
 ```text
-eMolPat-1.0.0/
+eMolPat-1.0.7-test/
 ├── manifest.json
 ├── requirements.lock
 ├── packages/                 Five application wheels
@@ -115,9 +116,9 @@ Installation is offline, uses `pip --user`, and writes the verified suite record
 
 ### Python FELLES 3.14 test prerelease
 
-The prerelease `v1.0.4-python314-test` is a complete offline suite for the
+The prerelease `v1.0.7-test` is a complete offline suite for the
 Python FELLES 3.14 environment. Download
-`eMolPat-1.0.4-python314-test-windows.zip`, extract it, and run
+`eMolPat-1.0.7-test-windows.zip`, extract it, and run
 **Installer eMolPat - Manuell FELLES.cmd**. Open Python FELLES through the
 workstation's normal approved method, paste the copied command, and wait for the
 verified installation to finish. Then use **Start eMolPat - Manuell FELLES.cmd**
@@ -125,7 +126,7 @@ the same way. If startup fails, run **Start eMolPat - Diagnose.cmd** and return
 the displayed text. None of these manual launchers depends on Ivanti.
 
 This is a test prerelease and is not yet approved for routine laboratory use.
-See the [Python 3.14 prerelease notes](docs/releases/1.0.4-python314-test.md).
+See the [1.0.7 test release notes](docs/releases/1.0.7-test.md).
 
 ## Health and recovery
 
@@ -171,16 +172,16 @@ Build and verify the atomic Windows release:
 
 ```powershell
 py -3.12 scripts\build_suite.py `
-  --version 1.0.0 `
+  --version 1.0.7-test `
   --output dist `
   --component-root C:\path\to\eMolPat-components
 
-py -3.12 scripts\verify_suite.py dist\eMolPat-1.0.0
+py -3.12 scripts\verify_suite.py dist\eMolPat-1.0.7-test
 ```
 
 The build requires clean component trees at the exact commits in [`release/components.json`](release/components.json). It produces five normalized application wheels, collects the checked-in hash-locked Windows dependency set, validates every active package requirement, and writes a sorted cryptographic manifest.
 
-Current validation coverage includes manifest parsing, release integrity, health derivation, handoff lifecycle, redaction, rollback, deterministic assembly, Python FELLES launchers, offscreen UI behavior, and a synthetic end-to-end workflow. Release publication additionally requires the [managed-workstation checklist](docs/validation/release-checklist.md).
+Current validation coverage includes manifest parsing, release integrity, health derivation, child-process lifecycle, redaction, rollback, deterministic assembly, Python FELLES launchers, offscreen UI behavior, and a synthetic end-to-end workflow. Release publication additionally requires the [managed-workstation checklist](docs/validation/release-checklist.md).
 
 ## Repository structure
 

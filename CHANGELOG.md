@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.7-test] - 2026-08-23
+
+- Kept the eMolPat portal open and responsive while analysis applications run
+  in separate Python FELLES processes.
+- Added Hemato, Solide, and STAT unit navigation; LVMS-STAT is shown as a
+  disabled preview and is not part of installation or health verification.
+- Added explicit running, retry, and ready states for each application card.
+- Replaced legacy status pages with a compact clinical-light status dialog.
+- Blocked suite update and repair while an analysis application is running.
+- Enforced one deterministic suite version across manifest, build, archive,
+  checksum, and release metadata.
+
 ## [1.0.4-python314-test] - 2026-08-14
 
 - Fixed updates that skipped same-version application wheels.
@@ -23,7 +35,7 @@
 - Replaced unconditional readiness with verified per-user package and import health.
 - Added offline install and repair actions plus tag-based GitHub Release publication.
 - Added the Norwegian eMolPat portal with canonical icons for all four applications.
-- Added same-process standalone application handoff after the portal fully closes.
+- Added separate-process standalone application launch while the portal remains open.
 - Added atomic offline per-user installation, verification, repair, and retained-version rollback.
 - Added redacted rotating technical logs and safe startup-failure recovery.
 - Added deterministic five-wheel release assembly and Python FELLES/Ivanti launchers.
