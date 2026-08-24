@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.0] - 2026-08-24
+
+- Renamed the visible STAT navigation tab to Statistikk.
+- Added MolKey 0.2.0 as the sixth standalone application under its own MolKey
+  tab and pinned `molkey.__main__:main` to an immutable source commit.
+- Expanded deterministic offline assembly to the portal plus six component
+  wheels and added MolKey's compatible `platformdirs`, `portalocker`, and
+  Windows `pywin32` dependencies to the Python 3.14 lock.
+- Kept the MolKey registry, pseudonym mappings, secure-drive database, and
+  settings entirely inside MolKey.
+
 ## [1.1.0] - 2026-08-23
 
 - Added LVMS-STAT 2.0.0 as the fifth application under the STAT unit.

@@ -429,6 +429,12 @@ class MainWindow(QMainWindow):
         )
         self.unit_pages[ModuleUnit.STAT] = self.stat_page
         self.pages.addWidget(self.stat_page)
+        self.molkey_page = self._build_applications_page(
+            ModuleUnit.MOLKEY,
+            "MolKey",
+        )
+        self.unit_pages[ModuleUnit.MOLKEY] = self.molkey_page
+        self.pages.addWidget(self.molkey_page)
         self.about_page = self._build_about_page()
         self.pages.addWidget(self.about_page)
 
@@ -447,7 +453,7 @@ class MainWindow(QMainWindow):
         description = QLabel(
             "eMolPat er en samlet portal for molekylærpatologiske analyseverktøy. "
             "Portalen gir enkel tilgang til HemaFrag Diagnostics, IGH Merge, "
-            "VPM / HTS Tolkning, MPN Tolkning og LVMS Statistikk, samtidig "
+            "VPM / HTS Tolkning, MPN Tolkning, LVMS Statistikk og MolKey, samtidig "
             "som hvert program fortsetter å kjøre som et selvstendig verktøy."
         )
         description.setObjectName("pageIntro")

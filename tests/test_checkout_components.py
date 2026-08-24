@@ -41,11 +41,11 @@ def test_checkout_uses_exact_pinned_commits_without_a_shell(tmp_path: Path) -> N
         runner=runner,
     )
 
-    assert len(roots) == 5
+    assert len(roots) == 6
     assert all(path.parent == (tmp_path / "components").resolve() for path in roots)
     clone_commands = [command for command, _kwargs in commands if "clone" in command]
-    assert len(clone_commands) == 5
-    assert roots[-1].name == "LVMS-STAT"
+    assert len(clone_commands) == 6
+    assert roots[-1].name == "MolKey"
     assert all(command[0] == "git" for command in clone_commands)
     assert all("--no-checkout" in command for command in clone_commands)
     assert all(

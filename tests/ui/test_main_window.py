@@ -14,7 +14,7 @@ from emolpat.ui.main_window import MainWindow
 from emolpat.ui.widgets import ApplicationCard
 
 
-def test_portal_shows_five_real_modules(
+def test_portal_shows_six_real_modules(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -28,6 +28,7 @@ def test_portal_shows_five_real_modules(
         "vpm-tolkning",
         "mpn-tolkning",
         "lvms-stat",
+        "molkey",
     ]
     assert all(not card.module_icon.isNull() for card in window.application_cards)
     assert all(card.open_button.isEnabled() for card in window.application_cards)
@@ -42,7 +43,7 @@ def test_sidebar_contains_only_units_and_about(
     qtbot.addWidget(window)
 
     labels = [button.text() for button in window.navigation_buttons]
-    assert labels == ["Hemato", "Solide", "STAT", "Om eMolPat"]
+    assert labels == ["Hemato", "Solide", "Statistikk", "MolKey", "Om eMolPat"]
     assert "Systemstatus" not in labels
     assert "Oppdater" not in labels
 
@@ -82,6 +83,39 @@ def test_solide_is_empty_and_stat_contains_lvms_stat(
     assert "LVMS Statistikk" in stat_copy
     assert window.card("lvms-stat").open_button.text() == "Åpne app"
     assert window.card("lvms-stat").open_button.isEnabled()
+
+
+def test_molkey_has_its_own_cross_cutting_page(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    molkey_cards = window.unit_pages[ModuleUnit.MOLKEY].findChildren(ApplicationCard)
+    assert [card.module_id for card in molkey_cards] == ["molkey"]
+    assert window.card("molkey").open_button.text() == "Åpne app"
+    assert window.card("molkey").open_button.isEnabled()
+
+
+def test_molkey_launches_and_keeps_portal_open(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.show()
+
+    with qtbot.waitSignal(window.module_selected) as signal:
+        qtbot.mouseClick(
+            window.card("molkey").open_button,
+            Qt.MouseButton.LeftButton,
+        )
+
+    assert signal.args == ["molkey"]
+    assert window.isVisible()
 
 
 def test_lvms_stat_launches_from_stat_and_blocks_duplicate_clicks(

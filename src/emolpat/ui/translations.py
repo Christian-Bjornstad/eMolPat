@@ -5,11 +5,12 @@ from emolpat.domain import ModuleUnit
 UNIT_NAVIGATION = (
     (ModuleUnit.HEMATO, "Hemato", "Åpne hematologiske analyseverktøy"),
     (ModuleUnit.SOLIDE, "Solide", "Verktøy for solide svulster"),
-    (ModuleUnit.STAT, "STAT", "Statistikkverktøy"),
+    (ModuleUnit.STAT, "Statistikk", "Statistikkverktøy"),
+    (ModuleUnit.MOLKEY, "MolKey", "Felles verktøy for permanente pseudonymer"),
 )
 
 STATE_TEXT = {
-    "ready": ("Klar til bruk", "Alle fem programmer er verifisert."),
+    "ready": ("Klar til bruk", "Alle seks programmer er verifisert."),
     "not_installed": (
         "Programmer må installeres",
         "Installer hele eMolPat-pakken før programmene åpnes.",

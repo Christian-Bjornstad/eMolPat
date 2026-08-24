@@ -21,7 +21,7 @@ def write_manifest(tmp_path: Path, data: dict[str, object]) -> Path:
     return path
 
 
-def test_load_manifest_returns_the_five_approved_modules() -> None:
+def test_load_manifest_returns_the_six_approved_modules() -> None:
     manifest = load_manifest(FIXTURE)
 
     assert manifest.schema_version == 1
@@ -35,6 +35,7 @@ def test_load_manifest_returns_the_five_approved_modules() -> None:
     assert manifest.module("lvms-stat").description_en == (
         "Retrieval and processing of activity data from LVMS."
     )
+    assert manifest.module("molkey").entry_point == "molkey.__main__:main"
 
 
 def test_load_manifest_assigns_modules_to_their_approved_units() -> None:
@@ -43,8 +44,10 @@ def test_load_manifest_assigns_modules_to_their_approved_units() -> None:
     assert {module.unit for module in manifest.modules} == {
         ModuleUnit.HEMATO,
         ModuleUnit.STAT,
+        ModuleUnit.MOLKEY,
     }
     assert manifest.module("lvms-stat").unit is ModuleUnit.STAT
+    assert manifest.module("molkey").unit is ModuleUnit.MOLKEY
     assert all(module.description_nb for module in manifest.modules)
     assert all(module.description_en for module in manifest.modules)
 

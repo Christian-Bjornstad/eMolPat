@@ -19,7 +19,7 @@ def smoke_installed_suite(
     *,
     importer: Importer = importlib.import_module,
 ) -> int:
-    """Verify all six distributions and resolve every zero-argument launcher."""
+    """Verify all seven distributions and resolve every zero-argument launcher."""
     try:
         document = json.loads(manifest_path.read_text(encoding="utf-8"))
         importer("emolpat")
@@ -38,7 +38,11 @@ def smoke_installed_suite(
     except (ImportError, LookupError, OSError, TypeError, ValueError, RuntimeError) as exc:
         print(f"Installed suite smoke test failed: {type(exc).__name__}: {exc}")
         return 1
-    print("Installed suite smoke test passed: 6 distributions, 5 entry points")
+    module_count = len(document["modules"])
+    print(
+        "Installed suite smoke test passed: "
+        f"{module_count + 1} distributions, {module_count} entry points"
+    )
     return 0
 
 

@@ -44,6 +44,8 @@ param==2.4.1
 pillow==12.3.0
 pip==26.1.2
 plotly==6.9.0
+platformdirs==4.11.3
+portalocker==3.2.0
 pyparsing==3.3.2
 pyqt6-qt6==6.11.1
 pyqt6-sip==13.12.0
@@ -53,6 +55,7 @@ python-dateutil==2.9.0.post0
 pytz==2026.3.post1
 pyviz-comms==3.0.6
 pywin32-ctypes==0.2.3
+pywin32==312
 pyyaml==6.0.3
 referencing==0.37.0
 reportlab==4.4.9
