@@ -6,8 +6,8 @@
 - Added MolKey 0.2.0 as the sixth standalone application under its own MolKey
   tab and pinned `molkey.__main__:main` to an immutable source commit.
 - Expanded deterministic offline assembly to the portal plus six component
-  wheels and added MolKey's compatible `platformdirs` and `portalocker`
-  dependencies to the Python 3.14 lock.
+  wheels and added MolKey's compatible `platformdirs`, `portalocker`, and
+  Windows `pywin32` dependencies to the Python 3.14 lock.
 - Kept the MolKey registry, pseudonym mappings, secure-drive database, and
   settings entirely inside MolKey.
 

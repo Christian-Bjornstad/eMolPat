@@ -165,10 +165,11 @@ def test_python_314_dependency_input_is_fully_pinned() -> None:
         if line.strip() and not line.startswith("#")
     ]
 
-    assert len(lines) == 81
+    assert len(lines) == 82
     assert all("==" in line and " --hash=" not in line for line in lines)
     assert "platformdirs==4.11.3" in lines
     assert "portalocker==3.2.0" in lines
+    assert "pywin32==312" in lines
 
 
 def test_build_suite_passes_target_to_download_and_assembly(
