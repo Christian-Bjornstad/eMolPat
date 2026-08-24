@@ -65,6 +65,7 @@ def test_component_gate_runs_declared_commands_with_active_python(tmp_path: Path
 
 def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     versions = {
         "emolpat": "0.2.0",
@@ -103,3 +104,4 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
         "lvms_stat.portal",
         "molkey.__main__",
     ]
+    assert "7 distributions, 6 entry points" in capsys.readouterr().out

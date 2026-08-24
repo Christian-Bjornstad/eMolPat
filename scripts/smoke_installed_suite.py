@@ -38,7 +38,11 @@ def smoke_installed_suite(
     except (ImportError, LookupError, OSError, TypeError, ValueError, RuntimeError) as exc:
         print(f"Installed suite smoke test failed: {type(exc).__name__}: {exc}")
         return 1
-    print("Installed suite smoke test passed: 6 distributions, 5 entry points")
+    module_count = len(document["modules"])
+    print(
+        "Installed suite smoke test passed: "
+        f"{module_count + 1} distributions, {module_count} entry points"
+    )
     return 0
 
 
