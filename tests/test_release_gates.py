@@ -43,7 +43,7 @@ def test_component_gate_runs_declared_commands_with_active_python(tmp_path: Path
         python_executable="C:/Python314/python.exe",
     )
 
-    assert len(calls) == 10
+    assert len(calls) == 12
     for index in range(0, len(calls), 2):
         install, install_options = calls[index]
         command, test_options = calls[index + 1]
@@ -73,6 +73,7 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
         "archer-prosess": "0.1.0",
         "mpn-tolkning": "0.1.0",
         "lvms-stat": "2.0.0",
+        "molkey": "0.2.0",
     }
     imported = []
 
@@ -100,4 +101,5 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
         "archer_processor.__main__",
         "mpn_tolkning.__main__",
         "lvms_stat.portal",
+        "molkey.__main__",
     ]

@@ -62,6 +62,18 @@
       "description_nb": "Henting og behandling av aktivitetsdata fra LVMS.",
       "description_en": "Retrieval and processing of activity data from LVMS.",
       "unit": "stat"
+    },
+    {
+      "id": "molkey",
+      "name": "MolKey",
+      "distribution": "molkey",
+      "version": "0.2.0",
+      "import_name": "molkey",
+      "entry_point": "molkey.__main__:main",
+      "icon": "icons/molkey.png",
+      "description_nb": "Permanent pseudonymer for pasienter i molekylær patologi.",
+      "description_en": "Permanent patient pseudonym keys for molecular pathology.",
+      "unit": "molkey"
     }
   ],
   "files": []

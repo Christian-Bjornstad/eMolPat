@@ -31,6 +31,7 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
         "archer_prosess-0.1.0-py3-none-any.whl",
         "mpn_tolkning-0.1.0-py3-none-any.whl",
         "lvms_stat-2.0.0-py3-none-any.whl",
+        "molkey-0.2.0-py3-none-any.whl",
     ):
         path = packages / name
         path.write_bytes(name.encode())
@@ -46,7 +47,7 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     root = assemble_release("1.1.0", tmp_path / "dist", packages, dependencies)
 
     assert (root / "manifest.json").is_file()
-    assert len(list((root / "packages").glob("*.whl"))) == 6
+    assert len(list((root / "packages").glob("*.whl"))) == 7
     assert len(list((root / "wheelhouse").glob("*.whl"))) == 1
     manifest = load_manifest(root / "manifest.json")
     assert verify_release(root, manifest).ok
@@ -57,6 +58,7 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
         "vpm-tolkning",
         "mpn-tolkning",
         "lvms-stat",
+        "molkey",
     ]
 
 
@@ -110,7 +112,7 @@ def test_build_rejects_dependency_version_outside_component_contract(
         _validate_dependency_matrix([package], [dependency])
 
 
-def test_assembly_requires_exactly_the_six_approved_distributions(
+def test_assembly_requires_exactly_the_seven_approved_distributions(
     tmp_path: Path,
 ) -> None:
     packages, dependencies = create_inputs(tmp_path)
@@ -118,7 +120,7 @@ def test_assembly_requires_exactly_the_six_approved_distributions(
         packages[-1].with_name("wrong_app-0.1.0-py3-none-any.whl")
     )
 
-    with pytest.raises(RuntimeError, match="exactly the six approved"):
+    with pytest.raises(RuntimeError, match="exactly the seven approved"):
         assemble_release("1.1.0", tmp_path / "dist", packages, dependencies)
 
 
@@ -179,6 +181,7 @@ def test_build_suite_passes_target_to_download_and_assembly(
             "archer_prosess-0.1.0-py3-none-any.whl",
             "mpn_tolkning-0.1.0-py3-none-any.whl",
             "lvms_stat-2.0.0-py3-none-any.whl",
+            "molkey-0.2.0-py3-none-any.whl",
         )
     )
     seen: list[tuple[str, object]] = []
@@ -191,7 +194,7 @@ def test_build_suite_passes_target_to_download_and_assembly(
     monkeypatch.setattr(
         builder,
         "assert_clean_pinned_checkouts",
-        lambda _root: [Path(str(index)) for index in range(5)],
+        lambda _root: [Path(str(index)) for index in range(6)],
     )
 
     def build_wheel(_source: Path, destination: Path) -> None:

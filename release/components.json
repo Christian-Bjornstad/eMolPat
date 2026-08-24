@@ -43,5 +43,14 @@
     "import_name": "lvms_stat",
     "entry_point": "lvms_stat.portal:main",
     "test_command": ["python", "-m", "pytest", "-q"]
+  },
+  {
+    "id": "molkey",
+    "repository": "https://github.com/Christian-Bjornstad/MolKey.git",
+    "commit": "a01b5df13fc05bb0d2013d730405be85f25addf4",
+    "distribution": "molkey",
+    "import_name": "molkey",
+    "entry_point": "molkey.__main__:main",
+    "test_command": ["python", "-m", "pytest", "-q"]
   }
 ]
