@@ -24,6 +24,7 @@ ICON_FILES = {
     "vpm-tolkning": "vpm-tolkning.png",
     "mpn-tolkning": "mpn-tolkning.png",
     "lvms-stat": "lvms-stat.svg",
+    "molkey": "molkey.png",
 }
 
 

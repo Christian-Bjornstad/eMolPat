@@ -11,6 +11,7 @@ APPROVED_MODULE_IDS = (
     "vpm-tolkning",
     "mpn-tolkning",
     "lvms-stat",
+    "molkey",
 )
 
 
@@ -30,6 +31,7 @@ class ModuleUnit(StrEnum):
     HEMATO = "hemato"
     SOLIDE = "solide"
     STAT = "stat"
+    MOLKEY = "molkey"
 
 
 @dataclass(frozen=True)
