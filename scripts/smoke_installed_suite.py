@@ -19,7 +19,7 @@ def smoke_installed_suite(
     *,
     importer: Importer = importlib.import_module,
 ) -> int:
-    """Verify all six distributions and resolve every zero-argument launcher."""
+    """Verify all seven distributions and resolve every zero-argument launcher."""
     try:
         document = json.loads(manifest_path.read_text(encoding="utf-8"))
         importer("emolpat")

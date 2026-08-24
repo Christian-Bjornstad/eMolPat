@@ -44,7 +44,7 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
 def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.1.0", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
 
     assert (root / "manifest.json").is_file()
     assert len(list((root / "packages").glob("*.whl"))) == 7
@@ -65,7 +65,7 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
 def test_assembly_contains_ivanti_free_support_launchers(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.1.0", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
 
     expected = {
         "Installer eMolPat - Manuell FELLES.cmd",
@@ -82,8 +82,8 @@ def test_assembly_contains_ivanti_free_support_launchers(tmp_path: Path) -> None
 def test_two_assemblies_have_identical_manifests(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    first = assemble_release("1.1.0", tmp_path / "one", packages, dependencies)
-    second = assemble_release("1.1.0", tmp_path / "two", packages, dependencies)
+    first = assemble_release("1.2.0", tmp_path / "one", packages, dependencies)
+    second = assemble_release("1.2.0", tmp_path / "two", packages, dependencies)
 
     assert (first / "manifest.json").read_bytes() == (
         second / "manifest.json"
@@ -121,7 +121,7 @@ def test_assembly_requires_exactly_the_seven_approved_distributions(
     )
 
     with pytest.raises(RuntimeError, match="exactly the seven approved"):
-        assemble_release("1.1.0", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
 
 
 def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
@@ -131,7 +131,7 @@ def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
     )
 
     with pytest.raises(RuntimeError, match="component wheel version"):
-        assemble_release("1.1.0", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
 
 
 def test_dependency_download_targets_cpython_314_windows(
@@ -165,8 +165,10 @@ def test_python_314_dependency_input_is_fully_pinned() -> None:
         if line.strip() and not line.startswith("#")
     ]
 
-    assert len(lines) == 79
+    assert len(lines) == 81
     assert all("==" in line and " --hash=" not in line for line in lines)
+    assert "platformdirs==4.11.3" in lines
+    assert "portalocker==3.2.0" in lines
 
 
 def test_build_suite_passes_target_to_download_and_assembly(
