@@ -10,6 +10,8 @@
   Windows `pywin32` dependencies to the Python 3.14 lock.
 - Kept the MolKey registry, pseudonym mappings, secure-drive database, and
   settings entirely inside MolKey.
+- Rebuilt the suite with Myolid Tolkning / Archer Prosess pinned to commit
+  `2b0a29de99bc89c2c2a8417679746d634d670847`.
 
 ## [1.1.0] - 2026-08-23
 

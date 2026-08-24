@@ -30,6 +30,7 @@ def test_every_component_has_an_immutable_revision() -> None:
         "lvms_stat",
         "molkey",
     }
+    assert components[2].commit == "2b0a29de99bc89c2c2a8417679746d634d670847"
     assert components[-1].commit == "a01b5df13fc05bb0d2013d730405be85f25addf4"
 
 

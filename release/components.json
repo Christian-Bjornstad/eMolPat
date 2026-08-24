@@ -20,7 +20,7 @@
   {
     "id": "vpm-tolkning",
     "repository": "https://github.com/Christian-Bjornstad/Archer-prosess.git",
-    "commit": "8bc69e7674f404067c78c15d9683529b297026b3",
+    "commit": "2b0a29de99bc89c2c2a8417679746d634d670847",
     "distribution": "archer-prosess",
     "import_name": "archer_processor",
     "entry_point": "archer_processor.__main__:main",
