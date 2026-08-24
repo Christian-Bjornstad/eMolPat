@@ -131,7 +131,7 @@ def test_successful_install_writes_verified_record_atomically(tmp_path: Path) ->
     record = read_install_record(paths.install_record)
     assert record is not None
     assert record.suite_version == "1.1.0"
-    assert len(record.modules) == 5
+    assert len(record.modules) == 6
     assert not paths.install_record.with_suffix(".json.tmp").exists()
     assert (paths.rollback / "1.1.0" / "manifest.json").is_file()
 
