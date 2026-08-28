@@ -30,7 +30,7 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
         "igh_merge-0.2.0-py3-none-any.whl",
         "archer_prosess-0.1.0-py3-none-any.whl",
         "mpn_tolkning-0.1.0-py3-none-any.whl",
-        "lvms_stat-2.0.0-py3-none-any.whl",
+        "lvms_stat-2.0.1-py3-none-any.whl",
         "molkey-0.2.0-py3-none-any.whl",
     ):
         path = packages / name
@@ -44,7 +44,7 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
 def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.2.1", tmp_path / "dist", packages, dependencies)
 
     assert (root / "manifest.json").is_file()
     assert len(list((root / "packages").glob("*.whl"))) == 7
@@ -62,19 +62,14 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     ]
 
 
-def test_assembly_contains_ivanti_free_support_launchers(tmp_path: Path) -> None:
+def test_assembly_contains_only_verified_python_bootstraps(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.2.1", tmp_path / "dist", packages, dependencies)
 
-    expected = {
-        "Installer eMolPat - Manuell FELLES.cmd",
-        "Start eMolPat - Manuell FELLES.cmd",
-        "Start eMolPat - Diagnose.cmd",
-        "Start eMolPat - Clean import.cmd",
-        "diagnose_emolpat_start.py",
-    }
-    assert expected <= {path.name for path in root.iterdir()}
+    expected = {"install_emolpat.py", "start_emolpat.py"}
+    assert not list(root.glob("*.cmd"))
+    assert not (root / "diagnose_emolpat_start.py").exists()
     manifest = load_manifest(root / "manifest.json")
     assert expected <= {item.path for item in manifest.files}
 
@@ -82,8 +77,8 @@ def test_assembly_contains_ivanti_free_support_launchers(tmp_path: Path) -> None
 def test_two_assemblies_have_identical_manifests(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    first = assemble_release("1.2.0", tmp_path / "one", packages, dependencies)
-    second = assemble_release("1.2.0", tmp_path / "two", packages, dependencies)
+    first = assemble_release("1.2.1", tmp_path / "one", packages, dependencies)
+    second = assemble_release("1.2.1", tmp_path / "two", packages, dependencies)
 
     assert (first / "manifest.json").read_bytes() == (
         second / "manifest.json"
@@ -121,7 +116,7 @@ def test_assembly_requires_exactly_the_seven_approved_distributions(
     )
 
     with pytest.raises(RuntimeError, match="exactly the seven approved"):
-        assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.2.1", tmp_path / "dist", packages, dependencies)
 
 
 def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
@@ -131,7 +126,7 @@ def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
     )
 
     with pytest.raises(RuntimeError, match="component wheel version"):
-        assemble_release("1.2.0", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.2.1", tmp_path / "dist", packages, dependencies)
 
 
 def test_dependency_download_targets_cpython_314_windows(
@@ -183,7 +178,7 @@ def test_build_suite_passes_target_to_download_and_assembly(
             "igh_merge-0.2.0-py3-none-any.whl",
             "archer_prosess-0.1.0-py3-none-any.whl",
             "mpn_tolkning-0.1.0-py3-none-any.whl",
-            "lvms_stat-2.0.0-py3-none-any.whl",
+            "lvms_stat-2.0.1-py3-none-any.whl",
             "molkey-0.2.0-py3-none-any.whl",
         )
     )

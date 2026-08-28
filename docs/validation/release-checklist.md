@@ -25,7 +25,8 @@ Release version: __________  Date: __________  Reviewer: __________
 - [ ] MolKey: _____ passed / _____ skipped.
 - [ ] `scripts/verify_suite.py` passes the assembled folder.
 - [ ] Missing wheel and corrupt-checksum tests fail safely.
-- [ ] Release ZIP contains one safe top-level directory.
+- [ ] Release ZIP contains one safe top-level directory, exactly two CMD
+      launchers, and the verified payload under `suite`.
 - [ ] Downloaded ZIP matches the published SHA-256 sidecar.
 - [ ] GitHub Release contains only the Windows ZIP and checksum assets.
 

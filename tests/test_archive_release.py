@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
 
-from emolpat.integrity import sha256_file
+from emolpat.integrity import sha256_file, verify_release
+from emolpat.manifest import load_manifest
 from scripts.archive_release import create_release_archive
 from scripts.build_suite import assemble_release
 from tests.test_build_suite import create_inputs
@@ -12,7 +13,7 @@ from tests.test_build_suite import create_inputs
 def build_release(tmp_path: Path, name: str) -> Path:
     packages, dependencies = create_inputs(tmp_path / name)
     return assemble_release(
-        "1.2.0", tmp_path / f"dist-{name}", packages, dependencies
+        "1.2.1", tmp_path / f"dist-{name}", packages, dependencies
     )
 
 
@@ -23,13 +24,16 @@ def test_archive_has_one_safe_top_level_directory_and_checksum(
 
     archive, checksum = create_release_archive(release, tmp_path / "out")
 
-    assert archive.name == "eMolPat-1.2.0-windows.zip"
-    assert checksum.name == "eMolPat-1.2.0-windows.zip.sha256"
+    assert archive.name == "eMolPat-1.2.1-windows.zip"
+    assert checksum.name == "eMolPat-1.2.1-windows.zip.sha256"
     with ZipFile(archive) as zipped:
         names = zipped.namelist()
         assert names
-        assert all(name.startswith("eMolPat-1.2.0/") for name in names)
-        assert "eMolPat-1.2.0/manifest.json" in names
+        assert all(name.startswith("eMolPat-1.2.1/") for name in names)
+        assert "eMolPat-1.2.1/Installer eMolPat.cmd" in names
+        assert "eMolPat-1.2.1/Start eMolPat.cmd" in names
+        assert "eMolPat-1.2.1/suite/manifest.json" in names
+        assert sum(name.lower().endswith(".cmd") for name in names) == 2
         assert not any(".." in PurePosixPath(name).parts for name in names)
     assert checksum.read_text(encoding="ascii").split()[0] == sha256_file(archive)
 
@@ -43,3 +47,31 @@ def test_two_archives_are_byte_identical(tmp_path: Path) -> None:
 
     assert first_archive.read_bytes() == second_archive.read_bytes()
     assert first_checksum.read_bytes() == second_checksum.read_bytes()
+
+
+def test_outer_operator_files_do_not_break_suite_preflight(tmp_path: Path) -> None:
+    release = build_release(tmp_path, "release")
+    archive, _checksum = create_release_archive(release, tmp_path / "out")
+    extracted = tmp_path / "extracted"
+
+    with ZipFile(archive) as zipped:
+        zipped.extractall(extracted)
+
+    operator_root = extracted / "eMolPat-1.2.1"
+    (operator_root / "lokal-hjelpefil.cmd").write_text("rem local helper\n")
+    suite_root = operator_root / "suite"
+    manifest = load_manifest(suite_root / "manifest.json")
+
+    assert verify_release(suite_root, manifest).ok
+
+
+def test_archive_launchers_target_protected_suite_payload(tmp_path: Path) -> None:
+    release = build_release(tmp_path, "release")
+    archive, _checksum = create_release_archive(release, tmp_path / "out")
+
+    with ZipFile(archive) as zipped:
+        installer = zipped.read("eMolPat-1.2.1/Installer eMolPat.cmd").decode("utf-8")
+        starter = zipped.read("eMolPat-1.2.1/Start eMolPat.cmd").decode("utf-8")
+
+    assert r"suite\install_emolpat.py" in installer
+    assert r"suite\start_emolpat.py" in starter

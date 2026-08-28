@@ -73,7 +73,7 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
         "igh-merge": "0.2.0",
         "archer-prosess": "0.1.0",
         "mpn-tolkning": "0.1.0",
-        "lvms-stat": "2.0.0",
+        "lvms-stat": "2.0.1",
         "molkey": "0.2.0",
     }
     imported = []
