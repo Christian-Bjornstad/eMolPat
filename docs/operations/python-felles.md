@@ -8,4 +8,8 @@ Download `eMolPat-<version>-windows.zip` from GitHub Releases. **Code > Download
 4. Wait for the message confirming that eMolPat is installed and verified.
 5. Future launches use **Start eMolPat.cmd** with the same paste step.
 
-The installer uses only the extracted `packages`, `wheelhouse`, manifest, and hash lock. Installation is offline and uses `pip --user`. No administrator access is required. If startup fails, contact technical support with `%LOCALAPPDATA%\eMolPat\logs`; never attach patient files.
+The installer uses only the extracted `suite` payload containing `packages`,
+`wheelhouse`, the manifest, and the hash lock. Installation is offline and uses
+`pip --user`. Files placed beside `suite` do not take part in preflight. No
+administrator access is required. If startup fails, contact technical support
+with `%LOCALAPPDATA%\eMolPat\logs`; never attach patient files.

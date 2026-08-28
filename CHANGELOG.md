@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.1] - 2026-08-28
+
+- Updated LVMS Statistikk to 2.0.1 at immutable commit
+  `72294225760b73d803edc66baaed8a3c3cb866f0`.
+- Reduced the Windows archive to the two supported operator CMD launchers.
+- Moved the verified offline payload under `suite` so local operator files next
+  to the launchers no longer trigger a false preflight integrity failure.
+- Removed the obsolete manual and diagnostic launchers from the release source.
+
 ## [1.2.0] - 2026-08-24
 
 - Renamed the visible STAT navigation tab to Statistikk.

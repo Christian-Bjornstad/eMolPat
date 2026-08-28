@@ -15,6 +15,15 @@ from emolpat.integrity import sha256_file, verify_release
 from emolpat.manifest import load_manifest
 
 FIXED_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
+OPERATOR_LAUNCHERS = ("Installer eMolPat.cmd", "Start eMolPat.cmd")
+
+
+def _write_member(zipped: zipfile.ZipFile, name: str, content: bytes) -> None:
+    info = zipfile.ZipInfo(name, FIXED_TIMESTAMP)
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.create_system = 0
+    info.external_attr = 0o100644 << 16
+    zipped.writestr(info, content)
 
 
 def create_release_archive(
@@ -40,16 +49,25 @@ def create_release_archive(
         compression=zipfile.ZIP_DEFLATED,
         compresslevel=9,
     ) as zipped:
+        for filename in OPERATOR_LAUNCHERS:
+            launcher = PROJECT_ROOT / "packaging" / filename
+            if not launcher.is_file():
+                raise FileNotFoundError(f"missing operator launcher: {launcher}")
+            _write_member(
+                zipped,
+                f"{top_level}/{filename}",
+                launcher.read_bytes(),
+            )
         for path in sorted(
             (item for item in root.rglob("*") if item.is_file()),
             key=lambda item: item.relative_to(root).as_posix(),
         ):
             relative = path.relative_to(root).as_posix()
-            info = zipfile.ZipInfo(f"{top_level}/{relative}", FIXED_TIMESTAMP)
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.create_system = 0
-            info.external_attr = 0o100644 << 16
-            zipped.writestr(info, path.read_bytes())
+            _write_member(
+                zipped,
+                f"{top_level}/suite/{relative}",
+                path.read_bytes(),
+            )
 
     checksum.write_text(
         f"{sha256_file(archive)}  {archive.name}\n",

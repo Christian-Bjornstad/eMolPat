@@ -148,31 +148,24 @@ def assemble_release(
     packages = _copy_files(package_wheels, root / "packages")
     dependencies = _copy_files(dependency_wheels, root / "wheelhouse")
 
-    launchers = []
+    bootstraps = []
     packaging_root = PROJECT_ROOT / "packaging"
     if packaging_root.is_dir():
         for filename in (
             "install_emolpat.py",
             "start_emolpat.py",
-            "Installer eMolPat.cmd",
-            "Start eMolPat.cmd",
-            "Installer eMolPat - Manuell FELLES.cmd",
-            "Start eMolPat - Manuell FELLES.cmd",
-            "Start eMolPat - Diagnose.cmd",
-            "Start eMolPat - Clean import.cmd",
-            "diagnose_emolpat_start.py",
         ):
             source = packaging_root / filename
             if source.is_file():
-                launcher_target = root / filename
-                shutil.copy2(source, launcher_target)
-                launchers.append(launcher_target)
+                bootstrap_target = root / filename
+                shutil.copy2(source, bootstrap_target)
+                bootstraps.append(bootstrap_target)
 
     lock_lines = sorted(_locked_requirement(path) for path in dependencies)
     lock = root / "requirements.lock"
     lock.write_text("\n".join(lock_lines) + "\n", encoding="utf-8", newline="\n")
 
-    declared_paths = [lock, *packages, *dependencies, *launchers]
+    declared_paths = [lock, *packages, *dependencies, *bootstraps]
     digests = tuple(
         FileDigest(
             path=path.relative_to(root).as_posix(),

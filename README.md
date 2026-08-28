@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="eMolPat suite 1.2.0" src="https://img.shields.io/badge/eMolPat-Suite%201.2.0-0c6669">
+  <img alt="eMolPat suite 1.2.1" src="https://img.shields.io/badge/eMolPat-Suite%201.2.1-0c6669">
   <img alt="Python 3.12 through 3.14" src="https://img.shields.io/badge/Python-3.12%E2%80%933.14-3776AB?logo=python&amp;logoColor=white">
   <img alt="PyQt6 desktop portal" src="https://img.shields.io/badge/Desktop-PyQt6-41CD52?logo=qt&amp;logoColor=white">
   <img alt="Windows workstation" src="https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows&amp;logoColor=white">
@@ -90,18 +90,23 @@ flowchart LR
 An approved release contains:
 
 ```text
-eMolPat-1.2.0/
-├── manifest.json
-├── requirements.lock
-├── packages/                 Portal plus six application wheels
-├── wheelhouse/               Exact offline Windows dependencies
-├── install_emolpat.py
-├── start_emolpat.py
+eMolPat-1.2.1/
 ├── Installer eMolPat.cmd
-└── Start eMolPat.cmd
+├── Start eMolPat.cmd
+└── suite/                     Protected, verified offline payload
+    ├── manifest.json
+    ├── requirements.lock
+    ├── packages/              Portal plus six application wheels
+    ├── wheelhouse/            Exact offline Windows dependencies
+    ├── install_emolpat.py
+    └── start_emolpat.py
 ```
 
-The manifest covers every installation artifact. The installer rejects missing files, unexpected paths, checksum changes, unsupported Python versions, incomplete component sets, and dependency versions outside an application's declared contract.
+The manifest covers every installation artifact inside `suite`. The installer
+rejects missing files, unexpected payload paths, checksum changes, unsupported
+Python versions, incomplete component sets, and dependency versions outside an
+application's declared contract. Operator files beside `suite` are deliberately
+outside the protected payload and cannot cause a false preflight failure.
 
 ## Managed-workstation installation
 
@@ -118,16 +123,13 @@ Installation is offline, uses `pip --user`, and writes the verified suite record
 
 ### Python FELLES 3.14 release candidate
 
-Version `1.2.0` adds MolKey as a sixth standalone application and renames the
-STAT section to Statistikk. Download `eMolPat-1.2.0-windows.zip`, extract it, and run
-**Installer eMolPat - Manuell FELLES.cmd**. Open Python FELLES through the
-workstation's normal approved method, paste the copied command, and wait for the
-verified installation to finish. Then use **Start eMolPat - Manuell FELLES.cmd**
-the same way. If startup fails, run **Start eMolPat - Diagnose.cmd** and return
-the displayed text. None of these manual launchers depends on Ivanti.
+Version `1.2.1` updates LVMS Statistikk to 2.0.1 and separates the two operator
+launchers from the protected suite payload. Download
+`eMolPat-1.2.1-windows.zip`, extract the complete archive, and use only
+**Installer eMolPat.cmd** and **Start eMolPat.cmd** from the extracted root.
 
 This is a test prerelease and is not yet approved for routine laboratory use.
-See the [1.2.0 release notes](docs/releases/1.2.0.md).
+See the [1.2.1 release notes](docs/releases/1.2.1.md).
 
 ## Health and recovery
 
@@ -176,11 +178,11 @@ Build and verify the atomic Windows release:
 
 ```powershell
 py -3.12 scripts\build_suite.py `
-  --version 1.2.0 `
+  --version 1.2.1 `
   --output dist `
   --component-root C:\path\to\eMolPat-components
 
-py -3.12 scripts\verify_suite.py dist\eMolPat-1.2.0
+py -3.12 scripts\verify_suite.py dist\eMolPat-1.2.1
 ```
 
 The build requires clean component trees at the exact commits in [`release/components.json`](release/components.json). It produces seven normalized package wheels, collects the checked-in hash-locked Windows dependency set, validates every active package requirement, and writes a sorted cryptographic manifest.
@@ -210,7 +212,7 @@ eMolPat/
 - [Install through Python FELLES](docs/operations/python-felles.md)
 - [Repair the complete suite](docs/operations/repair.md)
 - [Managed-workstation release checklist](docs/validation/release-checklist.md)
-- [eMolPat 1.2.0 release notes](docs/releases/1.2.0.md)
+- [eMolPat 1.2.1 release notes](docs/releases/1.2.1.md)
 
 ## Release status
 

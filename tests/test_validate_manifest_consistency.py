@@ -2,7 +2,7 @@ from scripts.validate_manifest_consistency import validate_manifest_consistency
 
 
 def test_validator_accepts_exact_bundled_suite_version() -> None:
-    assert validate_manifest_consistency("1.2.0")
+    assert validate_manifest_consistency("1.2.1")
 
 
 def test_validator_rejects_release_name_mismatch(capsys) -> None:
