@@ -5,16 +5,16 @@ Build only from the eMolPat release branch and the six clean component checkouts
 ```powershell
 py -3.12 -m pytest -q
 py -3.12 -m ruff check .
-py -3.12 scripts/build_suite.py --version 1.2.1 --output dist --component-root C:\Users\molpa\Documents\ChatGPT\eMolPat-components
-py -3.12 scripts/verify_suite.py dist\eMolPat-1.2.1
-py -3.12 scripts/archive_release.py dist\eMolPat-1.2.1 --output dist
+py -3.12 scripts/build_suite.py --version 1.2.2 --output dist --component-root C:\Users\molpa\Documents\ChatGPT\eMolPat-components
+py -3.12 scripts/verify_suite.py dist\eMolPat-1.2.2
+py -3.12 scripts/archive_release.py dist\eMolPat-1.2.2 --output dist
 ```
 
-The result contains seven package wheels, Windows dependency wheels, a hash-locked requirements file, a complete manifest, `eMolPat-1.2.1-windows.zip`, and its SHA-256 sidecar. Verify the download asset before publication:
+The result contains seven package wheels, Windows dependency wheels, a hash-locked requirements file, a complete manifest, `eMolPat-1.2.2-windows.zip`, and its SHA-256 sidecar. Verify the download asset before publication:
 
 ```powershell
-$expected = (Get-Content dist\eMolPat-1.2.1-windows.zip.sha256).Split()[0]
-$actual = (Get-FileHash dist\eMolPat-1.2.1-windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+$expected = (Get-Content dist\eMolPat-1.2.2-windows.zip.sha256).Split()[0]
+$actual = (Get-FileHash dist\eMolPat-1.2.2-windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actual -ne $expected) { throw "Release checksum mismatch" }
 ```
 

@@ -38,7 +38,7 @@
   {
     "id": "lvms-stat",
     "repository": "https://github.com/Christian-Bjornstad/LVMS-STAT.git",
-    "commit": "72294225760b73d803edc66baaed8a3c3cb866f0",
+    "commit": "eb07f3f40535117c123d140ab9674d4a87191292",
     "distribution": "lvms-stat",
     "import_name": "lvms_stat",
     "entry_point": "lvms_stat.portal:main",
