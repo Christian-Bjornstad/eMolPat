@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.2] - 2026-08-28
+
+- Advanced the LVMS-STAT 2.0.1 pin to
+  `eb07f3f40535117c123d140ab9674d4a87191292`, which makes its Python FELLES
+  installer test portable across equivalent Windows short and long paths.
+- Preserved the isolated `suite` payload and two-launcher release layout from
+  1.2.1.
+
 ## [1.2.1] - 2026-08-28
 
 - Updated LVMS Statistikk to 2.0.1 at immutable commit

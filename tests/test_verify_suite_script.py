@@ -9,7 +9,7 @@ from tests.test_build_suite import create_inputs
 
 def test_verifier_rejects_a_changed_wheel(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
-    root = assemble_release("1.2.1", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.2.2", tmp_path / "dist", packages, dependencies)
 
     assert verify_suite(root) == 0
     next((root / "packages").glob("*.whl")).write_bytes(b"changed")
