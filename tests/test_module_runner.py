@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -45,3 +46,33 @@ def test_run_module_rejects_unknown_module_without_resolving(
 def test_main_requires_exactly_one_module_id() -> None:
     assert module_runner.main([]) == 2
     assert module_runner.main(["hemafrag", "extra"]) == 2
+
+
+def test_child_entrypoint_receives_no_portal_arguments(monkeypatch, manifest) -> None:
+    monkeypatch.setattr(module_runner, "bundled_manifest", lambda: manifest)
+    arguments = ["module_runner.py", "igh-merge"]
+    monkeypatch.setattr(sys, "argv", arguments)
+    seen = []
+
+    def resolve(value):
+        seen.append(tuple(sys.argv))
+        return lambda: seen.append(tuple(sys.argv)) or 0
+
+    assert module_runner.run_module("igh-merge", resolver=resolve) == 0
+    assert seen == [("igh_merge.__main__:main",)] * 2
+    assert sys.argv is arguments
+
+
+def test_child_arguments_restored_when_callback_exits(monkeypatch, manifest) -> None:
+    monkeypatch.setattr(module_runner, "bundled_manifest", lambda: manifest)
+    arguments = ["module_runner.py", "igh-merge"]
+    monkeypatch.setattr(sys, "argv", arguments)
+
+    def callback():
+        raise SystemExit(4)
+
+    with pytest.raises(SystemExit) as error:
+        module_runner.run_module("igh-merge", resolver=lambda _value: callback)
+
+    assert error.value.code == 4
+    assert sys.argv is arguments

@@ -157,13 +157,15 @@ class SignalStub:
         self.callbacks.append(callback)
 
 
-def test_run_portal_wires_install_action_to_coordinator(
+def test_install_reaps_finished_apps_before_starting_coordinator(
     monkeypatch,
     qapp,
     tmp_path,
     manifest: SuiteManifest,
 ) -> None:
     started = []
+    manager = FakeProcessManager(running={"hemafrag"})
+    manager.exits.append(ProcessExit("hemafrag", 0))
 
     class FakeCoordinator:
         def __init__(self, *_args, **_kwargs) -> None:
@@ -199,6 +201,7 @@ def test_run_portal_wires_install_action_to_coordinator(
         release_root=tmp_path,
         paths=paths,
         health_loader=lambda: HealthReport(SuiteState.READY, "1.0.0", ()),
+        process_manager=manager,
     )
 
     assert outcome == 0
@@ -215,6 +218,7 @@ def test_install_is_blocked_while_analysis_app_runs(
     manager = FakeProcessManager(running={"hemafrag"})
     starts: list[bool] = []
     warnings: list[str] = []
+    observed: dict[str, bool] = {}
 
     class CoordinatorStub:
         def __init__(self, *_args, **_kwargs) -> None:
@@ -233,14 +237,19 @@ def test_install_is_blocked_while_analysis_app_runs(
 
     def request_then_close() -> None:
         window = visible_window(qapp)
-        window.install_requested.emit()
+        window.install_button.click()
+        observed["can_retry"] = window.install_button.isEnabled()
+        observed["can_close"] = window.close()
+        # Clean up even before the regression is fixed, so app.exec can return.
+        window.set_install_running(False)
+        window.status_dialog.close()
         window.close()
 
     QTimer.singleShot(0, request_then_close)
 
     run_portal(
         manifest,
-        ready_report,
+        HealthReport(SuiteState.UPDATE_AVAILABLE, "1.0.0", ()),
         release_root=tmp_path,
         paths=UserPaths(
             tmp_path,
@@ -253,6 +262,7 @@ def test_install_is_blocked_while_analysis_app_runs(
     )
 
     assert starts == []
+    assert observed == {"can_retry": True, "can_close": True}
     assert warnings == [
         (
             "Lukk kjørende analyseapper før eMolPat oppdateres eller repareres.\n"

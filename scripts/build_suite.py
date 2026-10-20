@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from collections import deque
 from dataclasses import asdict, dataclass, replace
 from email.parser import Parser
 from pathlib import Path
@@ -20,6 +21,8 @@ if str(PROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
+from packaging.tags import compatible_tags, cpython_tags
 from packaging.utils import canonicalize_name, parse_wheel_filename
 
 from emolpat.components import load_components
@@ -33,8 +36,9 @@ COMPONENT_DIRECTORIES = {
     "igh-merge": "IGH",
     "vpm-tolkning": "Archer-prosess",
     "mpn-tolkning": "MPN-Tolkning",
-    "lvms-stat": "LVMS-STAT",
+    "molstat": "MolStat",
     "molkey": "MolKey",
+    "solide": "solide",
 }
 APPROVED_DISTRIBUTIONS = {
     "emolpat",
@@ -42,8 +46,9 @@ APPROVED_DISTRIBUTIONS = {
     "igh-merge",
     "archer-prosess",
     "mpn-tolkning",
-    "lvms-stat",
+    "molstat",
     "molkey",
+    "solide",
 }
 
 
@@ -114,7 +119,7 @@ def assemble_release(
             raise RuntimeError(f"duplicate package wheel: {normalized}")
         package_versions[normalized] = str(wheel_version)
     if set(package_versions) != APPROVED_DISTRIBUTIONS:
-        raise RuntimeError("release must contain exactly the seven approved distributions")
+        raise RuntimeError("release must contain exactly the eight approved distributions")
 
     template = load_manifest(
         PROJECT_ROOT / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json"
@@ -255,21 +260,66 @@ def _download_dependencies(destination: Path, target: PythonTarget) -> None:
     )
 
 
+def _copy_vendored_wheels(component_root: Path, destination: Path) -> None:
+    """Collect the native wheel shipped in the immutable HemaFrag source pin."""
+    source = component_root / COMPONENT_DIRECTORIES["hemafrag"]
+    relative = "wheels/fraggler_kernels-0.1.2-cp310-abi3-win_amd64.whl"
+    wheel = source / relative
+    if not wheel.is_file():
+        raise RuntimeError(f"missing approved vendored wheel: {relative}")
+    try:
+        _git_text(source, "ls-files", "--error-unmatch", "--", relative)
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(f"vendored wheel is not tracked: {relative}") from exc
+    if _git_text(source, "status", "--porcelain", "--", relative):
+        raise RuntimeError(f"vendored wheel has unapproved changes: {relative}")
+    shutil.copy2(wheel, destination / wheel.name)
+
+
 def _validate_dependency_matrix(
     package_wheels: list[Path],
     dependency_wheels: list[Path],
+    target: PythonTarget = PYTHON_314,
 ) -> None:
-    """Prove every active wheel requirement is present at an allowed version."""
+    """Validate runtime tags, Python support and the complete offline closure."""
+    if target.platform != "win_amd64":
+        raise ValueError(f"no marker environment defined for {target.platform}")
+    python_version = (int(target.python_version[0]), int(target.python_version[1:]))
+    version_text = ".".join(map(str, python_version))
+    full_version = f"{version_text}.0"
+    environment = {
+        "implementation_name": "cpython",
+        "implementation_version": full_version,
+        "os_name": "nt",
+        "platform_machine": "AMD64",
+        "platform_python_implementation": "CPython",
+        "platform_system": "Windows",
+        "python_full_version": full_version,
+        "python_version": version_text,
+        "sys_platform": "win32",
+    }
+    # Explicit target arguments avoid inheriting the build host's interpreter/ABI.
+    # https://packaging.pypa.io/en/stable/tags.html#packaging.tags.cpython_tags
+    supported_tags = set(
+        cpython_tags(python_version, [target.abi], [target.platform])
+    ) | set(
+        compatible_tags(
+            python_version, f"cp{target.python_version}", [target.platform]
+        )
+    )
     versions = {}
+    requirements = {}
+    wheel_names = {}
     for wheel in (*package_wheels, *dependency_wheels):
-        name, version, _build, _tags = parse_wheel_filename(wheel.name)
+        name, version, _build, tags = parse_wheel_filename(wheel.name)
+        if not tags & supported_tags:
+            raise RuntimeError(f"incompatible wheel for Python {version_text}: {wheel.name}")
         normalized = canonicalize_name(name)
         previous = versions.get(normalized)
         if previous is not None and previous != version:
             raise RuntimeError(f"conflicting wheel versions for {normalized}")
         versions[normalized] = version
-
-    for wheel in package_wheels:
+        wheel_names[normalized] = wheel.name
         with zipfile.ZipFile(wheel) as archive:
             metadata_name = next(
                 name for name in archive.namelist() if name.endswith(".dist-info/METADATA")
@@ -277,15 +327,43 @@ def _validate_dependency_matrix(
             metadata = Parser().parsestr(
                 archive.read(metadata_name).decode("utf-8", errors="strict")
             )
-        for value in metadata.get_all("Requires-Dist", []):
-            requirement = Requirement(value)
-            if requirement.marker and not requirement.marker.evaluate({"extra": ""}):
+        python_requires = metadata.get("Requires-Python")
+        if python_requires and full_version not in SpecifierSet(python_requires):
+            raise RuntimeError(
+                f"Requires-Python excludes {full_version}: {wheel.name}: {python_requires}"
+            )
+        requirements[normalized] = tuple(
+            Requirement(value) for value in metadata.get_all("Requires-Dist", [])
+        )
+
+    # Every wheel in the lock will be installed. Activate requested extras until
+    # no new extra is discovered; dependencies may request extras transitively.
+    extras = {name: {""} for name in versions}
+    pending = deque(versions)
+    while pending:
+        name = pending.popleft()
+        for requirement in requirements[name]:
+            marker = requirement.marker
+            if marker and any(
+                key in str(marker) for key in ("platform_release", "platform_version")
+            ):
+                raise RuntimeError(
+                    f"OS-version marker needs an explicit release target: {requirement}"
+                )
+            if marker and not any(
+                marker.evaluate({**environment, "extra": extra}) for extra in extras[name]
+            ):
                 continue
-            actual = versions.get(canonicalize_name(requirement.name))
+            dependency = canonicalize_name(requirement.name)
+            actual = versions.get(dependency)
             if actual is None or actual not in requirement.specifier:
                 raise RuntimeError(
-                    f"unsatisfied dependency for {wheel.name}: {requirement}"
+                    f"unsatisfied dependency for {wheel_names[name]}: {requirement}"
                 )
+            new_extras = requirement.extras - extras[dependency]
+            if new_extras:
+                extras[dependency].update(new_extras)
+                pending.append(dependency)
 
 
 def build_suite(
@@ -294,7 +372,7 @@ def build_suite(
     component_root: Path,
     target: PythonTarget = PYTHON_314,
 ) -> Path:
-    """Build seven package wheels, collect Windows dependencies, and assemble."""
+    """Build eight package wheels, collect Windows dependencies, and assemble."""
     if not validate_manifest_consistency(version):
         raise ValueError(
             f"suite version {version!r} does not match the bundled manifest"
@@ -309,12 +387,14 @@ def build_suite(
         _build_wheel(PROJECT_ROOT, package_dir)
         for source in component_sources:
             _build_wheel(source, package_dir)
-        if len(list(package_dir.glob("*.whl"))) != 7:
-            raise RuntimeError("suite build must produce exactly seven package wheels")
+        if len(list(package_dir.glob("*.whl"))) != len(APPROVED_DISTRIBUTIONS):
+            raise RuntimeError("suite build must produce exactly eight package wheels")
         _download_dependencies(dependency_dir, target)
+        _copy_vendored_wheels(component_root.resolve(), dependency_dir)
         _validate_dependency_matrix(
             list(package_dir.glob("*.whl")),
             list(dependency_dir.glob("*.whl")),
+            target,
         )
         for wheel in package_dir.glob("*.whl"):
             _normalize_wheel(wheel)

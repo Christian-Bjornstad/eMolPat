@@ -7,7 +7,6 @@ from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -32,7 +31,7 @@ from emolpat.ui.translations import (
     INSTALL_STAGE_TEXT,
     UNIT_NAVIGATION,
 )
-from emolpat.ui.widgets import ApplicationCard, StatusControl, placeholder_page
+from emolpat.ui.widgets import ApplicationCard, ApplicationGrid, StatusControl
 
 STYLESHEET = """/* eMolPat klinisk lys portal */
  
@@ -45,7 +44,7 @@ STYLESHEET = """/* eMolPat klinisk lys portal */
    Neutral: #F5F6FA (light surface - readability)
 */
 
-QMainWindow, QWidget#shell {
+QMainWindow, QDialog, QWidget#shell {
     background: #EDF4F6;
     color: #12383B;
 }
@@ -185,10 +184,6 @@ QFrame#applicationCard:hover {
     border-color: #87AAA9; 
     background: #F8FCFC; 
 }
-QFrame#applicationCard:focus-within { 
-    border-color: #2E86AB; 
-    outline: 2px solid #2E86AB; 
-}
 
 /* Install Progress */
 QLabel#installProgress { 
@@ -207,7 +202,7 @@ QLabel#moduleName {
     font-weight: 700; 
 }
 QLabel#moduleVersion { 
-    color: #6B8183; 
+    color: #526D70;
     font-size: 12px; 
 }
 QLabel#moduleDescription { 
@@ -254,14 +249,6 @@ QWidget#cardsContainer, QScrollArea QWidget#qt_scrollarea_viewport {
     background: #F5F6FA; 
 }
 
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-    QPushButton#navigationButton:hover,
-    QFrame#applicationCard:hover,
-    QPushButton#primaryButton:hover {
-        transition: none !important;
-    }
-}
 """
 
 
@@ -283,11 +270,13 @@ class MainWindow(QMainWindow):
         self.health = health
         self.release_available = release_available
         self._install_running = False
+        self._running_modules: set[str] = set()
         self.application_cards: list[ApplicationCard] = []
         self.navigation_buttons: list[QPushButton] = []
+        self.status_controls: list[StatusControl] = []
         self.setWindowTitle(f"eMolPat {manifest.suite_version}")
         self.setAccessibleName("eMolPat programportal")
-        self.setMinimumSize(980, 700)
+        self.setMinimumSize(760, 520)
         self.resize(1200, 800)
         self.setStyleSheet(STYLESHEET)
         self._build_ui()
@@ -299,21 +288,28 @@ class MainWindow(QMainWindow):
         raise KeyError(f"unknown module card: {module_id}")
 
     def set_module_running(self, module_id: str) -> None:
+        self._running_modules.add(module_id)
         self.card(module_id).show_running()
 
     def set_module_ready(self, module_id: str) -> None:
-        card = self.card(module_id)
-        if self.health.state is SuiteState.READY:
-            card.show_ready()
-        else:
-            card.show_unhealthy()
+        self._running_modules.discard(module_id)
+        self._refresh_card(self.card(module_id))
 
     def set_module_failed(self, module_id: str, _error_code: str) -> None:
+        self._running_modules.discard(module_id)
         card = self.card(module_id)
-        if self.health.state is SuiteState.READY:
+        if self.health.state is SuiteState.READY and not self._install_running:
             card.show_failure()
         else:
-            card.show_unhealthy()
+            self._refresh_card(card)
+
+    def _refresh_card(self, card: ApplicationCard) -> None:
+        if card.module_id in self._running_modules:
+            card.show_running()
+        elif self._install_running:
+            card.show_installing()
+        else:
+            card.set_enabled(self.health.state is SuiteState.READY)
 
     def show_running_apps_warning(self, module_ids: frozenset[str]) -> None:
         names = [
@@ -352,6 +348,7 @@ class MainWindow(QMainWindow):
         brand.setObjectName("brand")
         subtitle = QLabel("Molekylærpatologisk programportal")
         subtitle.setObjectName("brandSubtitle")
+        subtitle.setWordWrap(True)
         self.version_label = QLabel(f"Versjon {self.manifest.suite_version}")
         self.version_label.setObjectName("versionLabel")
         layout.addWidget(brand)
@@ -410,31 +407,18 @@ class MainWindow(QMainWindow):
 
         self.pages = QStackedWidget()
         self.unit_pages: dict[ModuleUnit, QWidget] = {}
-        hemato_page = self._build_applications_page(
-            ModuleUnit.HEMATO,
-            "Hemato",
-            show_status=True,
-        )
-        self.unit_pages[ModuleUnit.HEMATO] = hemato_page
-        self.pages.addWidget(hemato_page)
-        self.solide_page = placeholder_page(
-            "Solide",
-            "Ingen verktøy tilgjengelig ennå.",
-        )
-        self.unit_pages[ModuleUnit.SOLIDE] = self.solide_page
-        self.pages.addWidget(self.solide_page)
-        self.stat_page = self._build_applications_page(
-            ModuleUnit.STAT,
-            "Statistikk",
-        )
-        self.unit_pages[ModuleUnit.STAT] = self.stat_page
-        self.pages.addWidget(self.stat_page)
-        self.molkey_page = self._build_applications_page(
-            ModuleUnit.MOLKEY,
-            "MolKey",
-        )
-        self.unit_pages[ModuleUnit.MOLKEY] = self.molkey_page
-        self.pages.addWidget(self.molkey_page)
+        for unit, label, _description in UNIT_NAVIGATION:
+            page = self._build_applications_page(unit, label)
+            self.unit_pages[unit] = page
+            self.pages.addWidget(page)
+        self.solide_page = self.unit_pages[ModuleUnit.SOLIDE]
+        self.stat_page = self.unit_pages[ModuleUnit.STAT]
+        self.molkey_page = self.unit_pages[ModuleUnit.MOLKEY]
+        self.status_banner = self.status_controls[0]
+        module_order = {
+            module.id: index for index, module in enumerate(self.manifest.modules)
+        }
+        self.application_cards.sort(key=lambda card: module_order[card.module_id])
         self.about_page = self._build_about_page()
         self.pages.addWidget(self.about_page)
 
@@ -450,10 +434,11 @@ class MainWindow(QMainWindow):
         )
         title = QLabel("Om eMolPat")
         title.setObjectName("pageTitle")
+        names = [module.name for module in self.manifest.modules]
+        applications = ", ".join(names[:-1]) + " og " + names[-1]
         description = QLabel(
             "eMolPat er en samlet portal for molekylærpatologiske analyseverktøy. "
-            "Portalen gir enkel tilgang til HemaFrag Diagnostics, IGH Merge, "
-            "VPM / HTS Tolkning, MPN Tolkning, LVMS Statistikk og MolKey, samtidig "
+            f"Portalen gir enkel tilgang til {applications}, samtidig "
             "som hvert program fortsetter å kjøre som et selvstendig verktøy."
         )
         description.setObjectName("pageIntro")
@@ -478,8 +463,6 @@ class MainWindow(QMainWindow):
         self,
         unit: ModuleUnit,
         title_text: str,
-        *,
-        show_status: bool = False,
     ) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -490,6 +473,7 @@ class MainWindow(QMainWindow):
         title.setObjectName("pageTitle")
         intro = QLabel("Velg analyseprogrammet du ønsker å åpne.")
         intro.setObjectName("pageIntro")
+        intro.setWordWrap(True)
 
         ready = self.health.state is SuiteState.READY
         heading_copy = QVBoxLayout()
@@ -500,56 +484,52 @@ class MainWindow(QMainWindow):
         heading = QHBoxLayout()
         heading.setSpacing(24)
         heading.addLayout(heading_copy, 1)
-        if show_status:
-            self.status_banner = StatusControl(self.health)
-            self.status_banner.clicked.connect(self.status_dialog.show)
-            heading.addWidget(
-                self.status_banner,
-                alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
-            )
+        status = StatusControl(self.health)
+        status.clicked.connect(self.status_dialog.show)
+        self.status_controls.append(status)
+        heading.addWidget(
+            status,
+            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
+        )
         layout.addLayout(heading)
-
-        cards = QWidget()
-        cards.setObjectName("cardsContainer")
-        grid = QGridLayout(cards)
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(20)
-        grid.setVerticalSpacing(20)
 
         unit_modules = tuple(
             module for module in self.manifest.modules if module.unit is unit
         )
-        for index, module in enumerate(unit_modules):
+        unit_cards = []
+        for module in unit_modules:
             card = ApplicationCard(module, enabled=ready)
             card.open_button.clicked.connect(
                 lambda _checked, module_id=module.id: self._open_module(module_id)
             )
-            grid.addWidget(card, index // 2, index % 2)
+            unit_cards.append(card)
             self.application_cards.append(card)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setWidget(cards)
+        scroll.setWidget(ApplicationGrid(unit_cards))
         layout.addWidget(scroll, 1)
         return page
 
     def _request_install(self) -> None:
-        self.set_install_running(True)
-        self.install_requested.emit()
+        if not self._install_running:
+            self.install_requested.emit()
 
     def set_install_running(self, running: bool) -> None:
         self._install_running = running
         self.status_dialog.set_install_running(running)
+        for card in self.application_cards:
+            self._refresh_card(card)
         if running:
             self.status_dialog.show()
 
     def set_health(self, health: HealthReport) -> None:
         self.health = health
-        ready = health.state is SuiteState.READY
-        self.status_banner.set_health(health)
+        for status in self.status_controls:
+            status.set_health(health)
         self.status_dialog.set_health(health)
         for card in self.application_cards:
-            card.set_enabled(ready)
+            self._refresh_card(card)
 
     def finish_install(self, result: InstallResult, health: HealthReport) -> None:
         self.set_install_running(False)
@@ -572,4 +552,5 @@ class MainWindow(QMainWindow):
         if self._install_running:
             event.ignore()
             return
+        self.status_dialog.close()
         super().closeEvent(event)

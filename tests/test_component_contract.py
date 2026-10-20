@@ -18,8 +18,9 @@ def test_every_component_has_an_immutable_revision() -> None:
         "igh-merge",
         "vpm-tolkning",
         "mpn-tolkning",
-        "lvms-stat",
+        "molstat",
         "molkey",
+        "solide",
     ]
     assert all(re.fullmatch(r"[0-9a-f]{40}", item.commit) for item in components)
     assert {item.import_name for item in components} == {
@@ -27,11 +28,13 @@ def test_every_component_has_an_immutable_revision() -> None:
         "igh_merge",
         "archer_processor",
         "mpn_tolkning",
-        "lvms_stat",
+        "molstat",
         "molkey",
+        "solide",
     }
-    assert components[2].commit == "2b0a29de99bc89c2c2a8417679746d634d670847"
-    assert components[-1].commit == "a01b5df13fc05bb0d2013d730405be85f25addf4"
+    assert components[2].commit == "249b82345761ff2facf78e35b3da1571f8af4195"
+    assert components[-1].commit == "4ff2b04d387a21896ec3bbd05f40e641de645f2c"
+    assert all("LVMS-STAT" not in item.repository for item in components)
 
 
 def test_component_entrypoints_are_callable_paths() -> None:
@@ -42,8 +45,9 @@ def test_component_entrypoints_are_callable_paths() -> None:
         "igh_merge.__main__:main",
         "archer_processor.__main__:main",
         "mpn_tolkning.__main__:main",
-        "lvms_stat.portal:main",
+        "emolpat.entrypoints:launch_molstat",
         "molkey.__main__:main",
+        "solide.__main__:main",
     }
 
 

@@ -43,7 +43,7 @@ def test_component_gate_runs_declared_commands_with_active_python(tmp_path: Path
         python_executable="C:/Python314/python.exe",
     )
 
-    assert len(calls) == 12
+    assert len(calls) == 14
     for index in range(0, len(calls), 2):
         install, install_options = calls[index]
         command, test_options = calls[index + 1]
@@ -73,8 +73,9 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
         "igh-merge": "0.2.0",
         "archer-prosess": "0.1.0",
         "mpn-tolkning": "0.1.0",
-        "lvms-stat": "2.0.1",
+        "molstat": "0.1.0",
         "molkey": "0.2.0",
+        "solide": "0.8.1",
     }
     imported = []
 
@@ -84,6 +85,8 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
         @staticmethod
         def main() -> int:
             return 0
+
+        launch_molstat = main
 
     def importer(name: str):
         imported.append(name)
@@ -97,11 +100,19 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
     assert result == 0
     assert imported == [
         "emolpat",
+        "hemafrag_diagnostics",
         "hemafrag_diagnostics.__main__",
+        "igh_merge",
         "igh_merge.__main__",
+        "archer_processor",
         "archer_processor.__main__",
+        "mpn_tolkning",
         "mpn_tolkning.__main__",
-        "lvms_stat.portal",
+        "molstat",
+        "emolpat.entrypoints",
+        "molkey",
         "molkey.__main__",
+        "solide",
+        "solide.__main__",
     ]
-    assert "7 distributions, 6 entry points" in capsys.readouterr().out
+    assert "8 distributions, 7 entry points" in capsys.readouterr().out

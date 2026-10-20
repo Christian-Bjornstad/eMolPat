@@ -25,6 +25,9 @@ MODULE_NAMES = {
     "igh-merge": "IGH Merge",
     "vpm-tolkning": "HTS-tolkning",
     "mpn-tolkning": "MPN-tolkning",
+    "molstat": "MolStat",
+    "molkey": "MolKey",
+    "solide": "Solide",
 }
 
 

@@ -21,7 +21,7 @@ def write_manifest(tmp_path: Path, data: dict[str, object]) -> Path:
     return path
 
 
-def test_load_manifest_returns_the_six_approved_modules() -> None:
+def test_load_manifest_returns_the_seven_approved_modules() -> None:
     manifest = load_manifest(FIXTURE)
 
     assert manifest.schema_version == 1
@@ -31,11 +31,14 @@ def test_load_manifest_returns_the_six_approved_modules() -> None:
     assert manifest.module("hemafrag").entry_point == (
         "hemafrag_diagnostics.__main__:main"
     )
-    assert manifest.module("lvms-stat").entry_point == "lvms_stat.portal:main"
-    assert manifest.module("lvms-stat").description_en == (
-        "Retrieval and processing of activity data from LVMS."
+    assert manifest.module("molstat").entry_point == "emolpat.entrypoints:launch_molstat"
+    assert manifest.module("molstat").description_en == (
+        "Statistics, backlog, and operational insight from LVMS."
     )
     assert manifest.module("molkey").entry_point == "molkey.__main__:main"
+    assert manifest.module("solide").entry_point == "solide.__main__:main"
+    with pytest.raises(KeyError):
+        manifest.module("lvms-stat")
 
 
 def test_load_manifest_assigns_modules_to_their_approved_units() -> None:
@@ -45,9 +48,11 @@ def test_load_manifest_assigns_modules_to_their_approved_units() -> None:
         ModuleUnit.HEMATO,
         ModuleUnit.STAT,
         ModuleUnit.MOLKEY,
+        ModuleUnit.SOLIDE,
     }
-    assert manifest.module("lvms-stat").unit is ModuleUnit.STAT
+    assert manifest.module("molstat").unit is ModuleUnit.STAT
     assert manifest.module("molkey").unit is ModuleUnit.MOLKEY
+    assert manifest.module("solide").unit is ModuleUnit.SOLIDE
     assert all(module.description_nb for module in manifest.modules)
     assert all(module.description_en for module in manifest.modules)
 

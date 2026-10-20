@@ -10,8 +10,9 @@ APPROVED_MODULE_IDS = (
     "igh-merge",
     "vpm-tolkning",
     "mpn-tolkning",
-    "lvms-stat",
+    "molstat",
     "molkey",
+    "solide",
 )
 
 
