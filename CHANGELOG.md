@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.0] - Unreleased
+
+- Replaced LVMS-STAT with MolStat and added Solide. The portal now contains
+  exactly seven applications, pinned to their audited repository defaults.
+- Added MolStat GUI startup using its existing per-user settings location and
+  removed portal arguments before invoking standalone application launchers.
+- Fixed blocked repairs leaving the portal stuck, running application buttons
+  becoming enabled after health refresh, and status windows surviving shutdown.
+- Adapted application cards to smaller windows and populated unit and About
+  pages from the actual installed suite contract.
+- Validate the complete offline dependency graph, extras, Python requirements,
+  and Windows wheel tags before assembling a release.
+- Added stable-version Windows CI and a weekly advisory next-Python check.
+- Manual release dispatch now checks out and verifies the requested immutable
+  tag before assembling or publishing its assets.
+
 ## [1.2.2] - 2026-08-28
 
 - Advanced the LVMS-STAT 2.0.1 pin to

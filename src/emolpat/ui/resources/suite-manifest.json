@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "suite_version": "1.2.2",
+  "suite_version": "1.3.0",
   "python_requires": ">=3.14,<3.15",
   "modules": [
     {
@@ -52,15 +52,15 @@
       "unit": "hemato"
     },
     {
-      "id": "lvms-stat",
-      "name": "LVMS Statistikk",
-      "distribution": "lvms-stat",
-      "version": "2.0.1",
-      "import_name": "lvms_stat",
-      "entry_point": "lvms_stat.portal:main",
-      "icon": "icons/lvms-stat.svg",
-      "description_nb": "Henting og behandling av aktivitetsdata fra LVMS.",
-      "description_en": "Retrieval and processing of activity data from LVMS.",
+      "id": "molstat",
+      "name": "MolStat",
+      "distribution": "molstat",
+      "version": "0.1.0",
+      "import_name": "molstat",
+      "entry_point": "emolpat.entrypoints:launch_molstat",
+      "icon": "icons/molstat.png",
+      "description_nb": "Statistikk, restanse og driftsinnsikt fra LVMS.",
+      "description_en": "Statistics, backlog, and operational insight from LVMS.",
       "unit": "stat"
     },
     {
@@ -74,6 +74,18 @@
       "description_nb": "Permanent pseudonymer for pasienter i molekylær patologi.",
       "description_en": "Permanent patient pseudonym keys for molecular pathology.",
       "unit": "molkey"
+    },
+    {
+      "id": "solide",
+      "name": "Solide",
+      "distribution": "solide",
+      "version": "0.8.1",
+      "import_name": "solide",
+      "entry_point": "solide.__main__:main",
+      "icon": "icons/solide.png",
+      "description_nb": "Variantgjennomgang og rapportering for solide svulster.",
+      "description_en": "Variant review and reporting for solid tumours.",
+      "unit": "solide"
     }
   ],
   "files": []

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QLabel
+from PyQt6.QtWidgets import QLabel, QScrollArea
 
 from emolpat.domain import (
     HealthReport,
@@ -11,10 +11,10 @@ from emolpat.domain import (
     SuiteState,
 )
 from emolpat.ui.main_window import MainWindow
-from emolpat.ui.widgets import ApplicationCard
+from emolpat.ui.widgets import ApplicationCard, ApplicationGrid, StatusControl
 
 
-def test_portal_shows_six_real_modules(
+def test_portal_shows_seven_real_modules(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -27,8 +27,9 @@ def test_portal_shows_six_real_modules(
         "igh-merge",
         "vpm-tolkning",
         "mpn-tolkning",
-        "lvms-stat",
+        "molstat",
         "molkey",
+        "solide",
     ]
     assert all(not card.module_icon.isNull() for card in window.application_cards)
     assert all(card.open_button.isEnabled() for card in window.application_cards)
@@ -65,7 +66,7 @@ def test_hemato_contains_all_four_real_apps(
     ]
 
 
-def test_solide_is_empty_and_stat_contains_lvms_stat(
+def test_solide_and_stat_contain_the_current_apps(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -79,10 +80,15 @@ def test_solide_is_empty_and_stat_contains_lvms_stat(
     stat_copy = " ".join(
         label.text() for label in window.stat_page.findChildren(QLabel)
     )
-    assert "Ingen verktøy tilgjengelig ennå" in solide_copy
-    assert "LVMS Statistikk" in stat_copy
-    assert window.card("lvms-stat").open_button.text() == "Åpne app"
-    assert window.card("lvms-stat").open_button.isEnabled()
+    assert "Solide" in solide_copy
+    assert [card.module_id for card in window.solide_page.findChildren(ApplicationCard)] == [
+        "solide"
+    ]
+    assert "MolStat" in stat_copy
+    assert "LVMS Statistikk" not in stat_copy
+    assert window.card("molstat").open_button.text() == "Åpne app"
+    assert window.card("molstat").open_button.isEnabled()
+    assert window.card("solide").open_button.isEnabled()
 
 
 def test_molkey_has_its_own_cross_cutting_page(
@@ -118,7 +124,7 @@ def test_molkey_launches_and_keeps_portal_open(
     assert window.isVisible()
 
 
-def test_lvms_stat_launches_from_stat_and_blocks_duplicate_clicks(
+def test_molstat_launches_from_stat_and_blocks_duplicate_clicks(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -129,14 +135,14 @@ def test_lvms_stat_launches_from_stat_and_blocks_duplicate_clicks(
 
     with qtbot.waitSignal(window.module_selected) as signal:
         qtbot.mouseClick(
-            window.card("lvms-stat").open_button,
+            window.card("molstat").open_button,
             Qt.MouseButton.LeftButton,
         )
 
-    assert signal.args == ["lvms-stat"]
-    window.set_module_running("lvms-stat")
-    assert window.card("lvms-stat").open_button.text() == "Kjører"
-    assert not window.card("lvms-stat").open_button.isEnabled()
+    assert signal.args == ["molstat"]
+    window.set_module_running("molstat")
+    assert window.card("molstat").open_button.text() == "Kjører"
+    assert not window.card("molstat").open_button.isEnabled()
     assert window.isVisible()
 
 
@@ -277,6 +283,8 @@ def test_about_tab_opens_creator_and_portal_information(
     assert "IGH Merge" in about_copy
     assert "VPM / HTS Tolkning" in about_copy
     assert "MPN Tolkning" in about_copy
+    assert all(module.name in about_copy for module in manifest.modules)
+    assert "LVMS" not in about_copy
     assert "Utviklet av Christian Bjørnstad" in about_copy
     assert window.about_button.accessibleName() == "Om eMolPat"
 
@@ -392,3 +400,93 @@ def test_portal_stays_open_while_installation_is_running(
     assert window.isVisible()
     window.set_install_running(False)
     window.close()
+
+
+def test_closing_portal_closes_open_system_status(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.show()
+    window.status_dialog.show()
+
+    window.close()
+
+    assert not window.isVisible()
+    assert not window.status_dialog.isVisible()
+
+
+def test_health_refresh_preserves_running_app_state(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.set_module_running("hemafrag")
+
+    window.set_health(ready_report)
+
+    assert window.card("hemafrag").open_button.text() == "Kjører"
+    assert not window.card("hemafrag").open_button.isEnabled()
+    assert window.card("igh-merge").open_button.isEnabled()
+
+
+def test_installation_disables_launch_until_finished(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+
+    window.set_install_running(True)
+    window.set_health(ready_report)
+
+    assert not any(card.open_button.isEnabled() for card in window.application_cards)
+    assert "Installasjon pågår" in window.card("hemafrag").status_label.text()
+    window.set_install_running(False)
+    assert all(card.open_button.isEnabled() for card in window.application_cards)
+
+
+def test_each_unit_page_can_open_system_status(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.show()
+
+    for page in window.unit_pages.values():
+        window.pages.setCurrentWidget(page)
+        status = page.findChild(StatusControl)
+        qtbot.mouseClick(status, Qt.MouseButton.LeftButton)
+        assert window.status_dialog.isVisible()
+        window.status_dialog.close()
+
+
+def test_compact_window_reflows_cards_without_horizontal_scrolling(
+    qtbot,
+    manifest: SuiteManifest,
+    ready_report: HealthReport,
+) -> None:
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.resize(760, 520)
+    window.show()
+    grid = window.unit_pages[ModuleUnit.HEMATO].findChild(ApplicationGrid)
+    scroll = window.unit_pages[ModuleUnit.HEMATO].findChild(QScrollArea)
+
+    qtbot.waitUntil(lambda: grid.columns == 1)
+
+    assert scroll.horizontalScrollBar().maximum() == 0
+    assert grid.cards[1].geometry().top() > grid.cards[0].geometry().top()
+
+    window.resize(1200, 800)
+    qtbot.waitUntil(
+        lambda: grid.columns == 2
+        and grid.cards[1].geometry().top() == grid.cards[0].geometry().top()
+    )

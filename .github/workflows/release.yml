@@ -18,6 +18,7 @@ jobs:
     runs-on: windows-latest
     env:
       GH_TOKEN: ${{ github.token }}
+      REQUESTED_RELEASE_TAG: ${{ inputs.version || github.ref_name }}
       QT_QPA_PLATFORM: minimal
       # Keep the first component failure visible even if a later Qt teardown aborts.
       PYTEST_ADDOPTS: "-x -vv"
@@ -25,6 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.version || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
@@ -32,16 +34,27 @@ jobs:
       - name: Resolve immutable version
         shell: pwsh
         run: |
-          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ inputs.version }}' } else { '${{ github.ref_name }}' }
+          $tag = $env:REQUESTED_RELEASE_TAG
           if ($tag -notmatch '^v([0-9]+\.[0-9]+\.[0-9]+)$') { throw "Invalid release tag: $tag" }
+          $version = $Matches[1]
+          $expected = git rev-parse "refs/tags/$tag^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw "Release tag does not exist: $tag" }
+          $actual = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $actual -ne $expected) { throw "Checkout does not match release tag: $tag" }
           "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "RELEASE_VERSION=$($Matches[1])" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "RELEASE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Refuse existing release assets
         if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
           gh release view $env:RELEASE_TAG
           if ($LASTEXITCODE -eq 0) { throw "Release already exists: $env:RELEASE_TAG" }
+      - name: Isolate release build dependencies from runner tools
+        shell: pwsh
+        run: |
+          python -m venv "$env:RUNNER_TEMP/emolpat-release"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$env:RUNNER_TEMP/emolpat-release/Scripts" | Add-Content -LiteralPath $env:GITHUB_PATH
       - name: Install development dependencies
         run: python -m pip install -e ".[dev]"
       - name: Static checks
@@ -86,4 +99,5 @@ jobs:
             "dist/eMolPat-$version-windows.zip" `
             "dist/eMolPat-$version-windows.zip.sha256" `
             --title "eMolPat $version" `
+            --verify-tag `
             --generate-notes

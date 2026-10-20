@@ -30,8 +30,9 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
         "igh_merge-0.2.0-py3-none-any.whl",
         "archer_prosess-0.1.0-py3-none-any.whl",
         "mpn_tolkning-0.1.0-py3-none-any.whl",
-        "lvms_stat-2.0.1-py3-none-any.whl",
+        "molstat-0.1.0-py3-none-any.whl",
         "molkey-0.2.0-py3-none-any.whl",
+        "solide-0.8.1-py3-none-any.whl",
     ):
         path = packages / name
         path.write_bytes(name.encode())
@@ -44,10 +45,10 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
 def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.2.2", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
 
     assert (root / "manifest.json").is_file()
-    assert len(list((root / "packages").glob("*.whl"))) == 7
+    assert len(list((root / "packages").glob("*.whl"))) == 8
     assert len(list((root / "wheelhouse").glob("*.whl"))) == 1
     manifest = load_manifest(root / "manifest.json")
     assert verify_release(root, manifest).ok
@@ -57,15 +58,16 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
         "igh-merge",
         "vpm-tolkning",
         "mpn-tolkning",
-        "lvms-stat",
+        "molstat",
         "molkey",
+        "solide",
     ]
 
 
 def test_assembly_contains_only_verified_python_bootstraps(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.2.2", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
 
     expected = {"install_emolpat.py", "start_emolpat.py"}
     assert not list(root.glob("*.cmd"))
@@ -77,8 +79,8 @@ def test_assembly_contains_only_verified_python_bootstraps(tmp_path: Path) -> No
 def test_two_assemblies_have_identical_manifests(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    first = assemble_release("1.2.2", tmp_path / "one", packages, dependencies)
-    second = assemble_release("1.2.2", tmp_path / "two", packages, dependencies)
+    first = assemble_release("1.3.0", tmp_path / "one", packages, dependencies)
+    second = assemble_release("1.3.0", tmp_path / "two", packages, dependencies)
 
     assert (first / "manifest.json").read_bytes() == (
         second / "manifest.json"
@@ -107,7 +109,7 @@ def test_build_rejects_dependency_version_outside_component_contract(
         _validate_dependency_matrix([package], [dependency])
 
 
-def test_assembly_requires_exactly_the_seven_approved_distributions(
+def test_assembly_requires_exactly_the_eight_approved_distributions(
     tmp_path: Path,
 ) -> None:
     packages, dependencies = create_inputs(tmp_path)
@@ -115,8 +117,8 @@ def test_assembly_requires_exactly_the_seven_approved_distributions(
         packages[-1].with_name("wrong_app-0.1.0-py3-none-any.whl")
     )
 
-    with pytest.raises(RuntimeError, match="exactly the seven approved"):
-        assemble_release("1.2.2", tmp_path / "dist", packages, dependencies)
+    with pytest.raises(RuntimeError, match="exactly the eight approved"):
+        assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
 
 
 def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
@@ -126,7 +128,7 @@ def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
     )
 
     with pytest.raises(RuntimeError, match="component wheel version"):
-        assemble_release("1.2.2", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
 
 
 def test_dependency_download_targets_cpython_314_windows(
@@ -160,11 +162,56 @@ def test_python_314_dependency_input_is_fully_pinned() -> None:
         if line.strip() and not line.startswith("#")
     ]
 
-    assert len(lines) == 82
+    assert len(lines) == len(set(lines))
     assert all("==" in line and " --hash=" not in line for line in lines)
     assert "platformdirs==4.11.3" in lines
     assert "portalocker==3.2.0" in lines
     assert "pywin32==312" in lines
+    assert "python-docx==1.2.0" in lines
+    assert "lxml==6.1.3" in lines
+
+
+def test_build_copies_native_wheel_from_approved_component_checkout(
+    tmp_path: Path,
+) -> None:
+    component_root = tmp_path / "components"
+    source = component_root / "HemaFrag-Diagnostics"
+    vendor = source / "wheels" / "fraggler_kernels-0.1.2-cp310-abi3-win_amd64.whl"
+    vendor.parent.mkdir(parents=True)
+    vendor.write_bytes(b"approved native dependency")
+    for arguments in (
+        ("init",),
+        ("add", "wheels"),
+        (
+            "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+            "commit", "-m", "Record approved vendored wheel",
+        ),
+    ):
+        subprocess.run(("git", *arguments), cwd=source, check=True, capture_output=True)
+    destination = tmp_path / "dependencies"
+    destination.mkdir()
+
+    builder._copy_vendored_wheels(component_root, destination)
+
+    assert (destination / vendor.name).read_bytes() == vendor.read_bytes()
+
+
+def test_build_rejects_missing_native_wheel(tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError, match="missing approved vendored wheel"):
+        builder._copy_vendored_wheels(tmp_path, tmp_path / "dependencies")
+
+
+def test_build_rejects_untracked_native_wheel(tmp_path: Path) -> None:
+    source = tmp_path / "components" / "HemaFrag-Diagnostics"
+    vendor = source / "wheels" / "fraggler_kernels-0.1.2-cp310-abi3-win_amd64.whl"
+    vendor.parent.mkdir(parents=True)
+    vendor.write_bytes(b"unapproved native dependency")
+    subprocess.run(("git", "init"), cwd=source, check=True, capture_output=True)
+    destination = tmp_path / "dependencies"
+    destination.mkdir()
+
+    with pytest.raises(RuntimeError, match="vendored wheel is not tracked"):
+        builder._copy_vendored_wheels(tmp_path / "components", destination)
 
 
 def test_build_suite_passes_target_to_download_and_assembly(
@@ -178,8 +225,9 @@ def test_build_suite_passes_target_to_download_and_assembly(
             "igh_merge-0.2.0-py3-none-any.whl",
             "archer_prosess-0.1.0-py3-none-any.whl",
             "mpn_tolkning-0.1.0-py3-none-any.whl",
-            "lvms_stat-2.0.1-py3-none-any.whl",
+            "molstat-0.1.0-py3-none-any.whl",
             "molkey-0.2.0-py3-none-any.whl",
+            "solide-0.8.1-py3-none-any.whl",
         )
     )
     seen: list[tuple[str, object]] = []
@@ -192,7 +240,7 @@ def test_build_suite_passes_target_to_download_and_assembly(
     monkeypatch.setattr(
         builder,
         "assert_clean_pinned_checkouts",
-        lambda _root: [Path(str(index)) for index in range(6)],
+        lambda _root: [Path(str(index)) for index in range(7)],
     )
 
     def build_wheel(_source: Path, destination: Path) -> None:
@@ -214,7 +262,8 @@ def test_build_suite_passes_target_to_download_and_assembly(
 
     monkeypatch.setattr(builder, "_build_wheel", build_wheel)
     monkeypatch.setattr(builder, "_download_dependencies", download)
-    monkeypatch.setattr(builder, "_validate_dependency_matrix", lambda _p, _d: None)
+    monkeypatch.setattr(builder, "_copy_vendored_wheels", lambda _r, _d: None)
+    monkeypatch.setattr(builder, "_validate_dependency_matrix", lambda _p, _d, _t: None)
     monkeypatch.setattr(builder, "_normalize_wheel", lambda _wheel: None)
     monkeypatch.setattr(builder, "assemble_release", assemble)
 

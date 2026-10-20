@@ -5,14 +5,16 @@ from __future__ import annotations
 from importlib.resources import files
 
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QResizeEvent
 from PyQt6.QtWidgets import (
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSizePolicy,
     QVBoxLayout,
+    QWidget,
 )
 
 from emolpat.domain import HealthReport, ModuleSpec
@@ -23,8 +25,9 @@ ICON_FILES = {
     "igh-merge": "igh-merge.png",
     "vpm-tolkning": "vpm-tolkning.png",
     "mpn-tolkning": "mpn-tolkning.png",
-    "lvms-stat": "lvms-stat.svg",
+    "molstat": "molstat.png",
     "molkey": "molkey.png",
+    "solide": "solide.png",
 }
 
 
@@ -70,7 +73,7 @@ class ApplicationCard(QFrame):
         self.module_icon = module_icon(module.id)
         self.setObjectName("applicationCard")
         self.setAccessibleName(f"{module.name}, versjon {module.version}")
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.setMinimumSize(280, 218)
 
         icon_label = QLabel()
@@ -88,6 +91,7 @@ class ApplicationCard(QFrame):
 
         name = QLabel(module.name)
         name.setObjectName("moduleName")
+        name.setWordWrap(True)
         version = QLabel(f"Versjon {module.version}")
         version.setObjectName("moduleVersion")
         heading = QVBoxLayout()
@@ -166,7 +170,7 @@ class ApplicationCard(QFrame):
             "●  Ikke klar",
             "Åpne app",
             False,
-            "eMolPat må repareres først",
+            "Se systemstatus for installasjon, oppdatering eller reparasjon",
         )
 
     def show_running(self) -> None:
@@ -176,6 +180,15 @@ class ApplicationCard(QFrame):
             "Kjører",
             False,
             f"{self.module_name} kjører allerede",
+        )
+
+    def show_installing(self) -> None:
+        self._show_state(
+            "installing",
+            "Installasjon pågår",
+            "Åpne app",
+            False,
+            "Vent til installasjonen er fullført",
         )
 
     def show_failure(self) -> None:
@@ -188,25 +201,29 @@ class ApplicationCard(QFrame):
         )
 
 
-def placeholder_page(title: str, body: str, action: str | None = None) -> QFrame:
-    """Create a meaningful non-empty secondary portal page."""
-    page = QFrame()
-    page.setObjectName("contentPage")
-    heading = QLabel(title)
-    heading.setObjectName("pageTitle")
-    detail = QLabel(body)
-    detail.setObjectName("pageIntro")
-    detail.setWordWrap(True)
-    layout = QVBoxLayout(page)
-    layout.setContentsMargins(0, 0, 0, 0)
-    layout.setSpacing(16)
-    layout.addWidget(heading)
-    layout.addWidget(detail)
-    if action:
-        button = QPushButton(action)
-        button.setMinimumHeight(44)
-        button.setEnabled(False)
-        button.setAccessibleName(action)
-        layout.addWidget(button, alignment=Qt.AlignmentFlag.AlignLeft)
-    layout.addStretch(1)
-    return page
+class ApplicationGrid(QWidget):
+    """Keep launch cards readable when the portal uses a compact window."""
+
+    def __init__(self, cards: list[ApplicationCard]) -> None:
+        super().__init__()
+        self.setObjectName("cardsContainer")
+        self.cards = cards
+        self.columns = 1
+        self.grid = QGridLayout(self)
+        self.grid.setContentsMargins(0, 0, 0, 0)
+        self.grid.setSpacing(20)
+        self.grid.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self._arrange_cards()
+
+    def _arrange_cards(self) -> None:
+        for card in self.cards:
+            self.grid.removeWidget(card)
+        for index, card in enumerate(self.cards):
+            self.grid.addWidget(card, index // self.columns, index % self.columns)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        columns = 2 if event.size().width() >= 650 else 1
+        if columns != self.columns:
+            self.columns = columns
+            self._arrange_cards()
+        super().resizeEvent(event)

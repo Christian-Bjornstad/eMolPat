@@ -82,8 +82,8 @@ def test_manager_rejects_duplicate_but_allows_different_module(
     children = iter((FakeChild(), FakeChild()))
     manager = ApplicationProcessManager(spawn=lambda _argv: next(children))
 
-    assert manager.start(manifest.module("lvms-stat")).started
-    duplicate = manager.start(manifest.module("lvms-stat"))
+    assert manager.start(manifest.module("molstat")).started
+    duplicate = manager.start(manifest.module("molstat"))
     assert not duplicate.started
     assert duplicate.error_code == "already_running"
     assert manager.start(manifest.module("igh-merge")).started
@@ -92,11 +92,11 @@ def test_manager_rejects_duplicate_but_allows_different_module(
 def test_poll_removes_finished_children(manifest: SuiteManifest) -> None:
     child = FakeChild()
     manager = ApplicationProcessManager(spawn=lambda _argv: child)
-    manager.start(manifest.module("lvms-stat"))
+    manager.start(manifest.module("molstat"))
     child.exit_code = 0
 
-    assert manager.poll() == (ProcessExit("lvms-stat", 0),)
-    assert not manager.is_running("lvms-stat")
+    assert manager.poll() == (ProcessExit("molstat", 0),)
+    assert not manager.is_running("molstat")
 
 
 def test_stop_monitoring_never_terminates_child(manifest: SuiteManifest) -> None:

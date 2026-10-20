@@ -19,7 +19,7 @@ def smoke_installed_suite(
     *,
     importer: Importer = importlib.import_module,
 ) -> int:
-    """Verify all seven distributions and resolve every zero-argument launcher."""
+    """Verify every distribution, import, and zero-argument GUI launcher."""
     try:
         document = json.loads(manifest_path.read_text(encoding="utf-8"))
         importer("emolpat")
@@ -30,6 +30,7 @@ def smoke_installed_suite(
                 raise RuntimeError(
                     f"version mismatch for {module['distribution']}: {installed}"
                 )
+            importer(module["import_name"])
             module_name, attribute = module["entry_point"].split(":", 1)
             callback = getattr(importer(module_name), attribute)
             if not callable(callback):

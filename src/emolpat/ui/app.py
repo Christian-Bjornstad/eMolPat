@@ -48,6 +48,7 @@ def run_portal(
         coordinator.finished.connect(window.finish_install)
 
         def request_install() -> None:
+            poll_children()
             running = manager.running_module_ids
             if running:
                 logging.getLogger("emolpat").warning(
@@ -56,7 +57,9 @@ def run_portal(
                 )
                 window.show_running_apps_warning(running)
                 return
-            coordinator.start()
+            window.set_install_running(True)
+            if not coordinator.start():
+                window.set_install_running(False)
 
         window.install_requested.connect(request_install)
 

@@ -3,22 +3,78 @@ name: eMolPat validation
 on:
   push:
   pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 4 * * 1"
+
+permissions:
+  contents: read
 
 jobs:
   windows-tests:
+    name: Windows / Python ${{ matrix.python-version }}
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
+    env:
+      QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
           cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Isolate application dependencies from runner tools
+        shell: pwsh
+        run: |
+          python -m venv "$env:RUNNER_TEMP/emolpat-ci"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$env:RUNNER_TEMP/emolpat-ci/Scripts" | Add-Content -LiteralPath $env:GITHUB_PATH
       - name: Install development dependencies
         run: python -m pip install -e ".[dev]"
       - name: Static checks
         run: python -m ruff check .
+      - name: Check installed dependency contracts
+        run: python -m pip check
       - name: Tests
+        run: python -m pytest -q
+      - name: Build portal wheel and source distribution
+        run: python -m build
+
+  next-python:
+    name: Python 3.16 development / early warning
+    runs-on: windows-latest
+    continue-on-error: true
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.16-dev"
+          architecture: x64
+          allow-prereleases: true
+      - name: Isolate development interpreter dependencies
         shell: pwsh
         run: |
-          $env:QT_QPA_PLATFORM="offscreen"
-          python -m pytest -q
+          python -m venv "$env:RUNNER_TEMP/emolpat-next"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$env:RUNNER_TEMP/emolpat-next/Scripts" | Add-Content -LiteralPath $env:GITHUB_PATH
+      # This isolated job deliberately probes past the declared support ceiling.
+      # It does not broaden the supported offline ABI or approve a release.
+      - name: Probe development Python and prerelease dependencies
+        run: python -m pip install --pre --ignore-requires-python -e ".[dev]"
+      - name: Check development dependency contracts
+        run: python -m pip check
+      - name: Test development Python
+        run: python -m pytest -q
+      - name: Build with development Python
+        run: python -m build
+      - name: Surface compatibility warning
+        if: failure()
+        shell: pwsh
+        run: Write-Output "::warning::Development Python compatibility failed. Inspect this job before extending Python support."
