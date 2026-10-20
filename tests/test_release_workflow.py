@@ -28,4 +28,7 @@ def test_release_workflow_is_tag_scoped_and_publishes_only_verified_assets() -> 
     assert 'dist/eMolPat-$version-windows.zip"' in text
     assert 'dist/eMolPat-$version-windows.zip.sha256"' in text
     assert "gh release create" in text
+    assert 'ref: ${{ inputs.version || github.ref }}' in text
+    assert 'git rev-parse "refs/tags/$tag^{commit}"' in text
+    assert '$actual -ne $expected' in text
     assert "dist/*.whl" not in text
