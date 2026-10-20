@@ -148,3 +148,25 @@ The portal additionally passes **178 tests on each of Windows CPython 3.12,
 3.14 and 3.15**. Its wheel and source distribution build successfully. Local
 linting checks the tracked source directories; unrelated pre-existing local
 build copies and scratch experiments are outside the source gate.
+
+### Assembled offline candidate
+
+The candidate builds from clean pinned source checkouts, including the MolStat
+test-only commit. Its regenerated Windows CPython 3.14 lock contains 85 exact
+wheels, including `python-docx`, `lxml` and the immutable HemaFrag ABI3 kernel.
+All dependency versions already present in the prior input remain pinned; the
+lock records the actual target-specific wheel hashes.
+
+A new Python 3.14 virtual environment installed the hash-locked dependencies and
+all eight application wheels without using an index. `pip check` passes. The
+installed-suite smoke resolves eight distributions and seven entry points. Each
+application also displayed its real `MainWindow` in a separate offscreen process
+and exited successfully after a timer requested shutdown. Those startup probes
+used disposable settings, an isolated home, and INI-based Qt settings; they did
+not use the operator's live registry or clinical configuration.
+
+Both the assembled payload and the deterministic archive pass integrity checks.
+The candidate ZIP SHA-256 is recorded in [its release notes](../releases/1.3.0.md).
+The Python 3.16 advisory is currently limited by an unavailable development build
+in GitHub's Windows runner. Required stable-version jobs use disposable virtual
+environments so unrelated runner tools cannot contaminate dependency checks.
