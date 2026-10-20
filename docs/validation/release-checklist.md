@@ -9,8 +9,9 @@ Release version: __________  Date: __________  Reviewer: __________
 - [ ] IGH Merge commit recorded: ______________________________
 - [ ] VPM/HTS commit recorded: ________________________________
 - [ ] MPN commit recorded: ___________________________________
-- [ ] LVMS-STAT commit recorded: ______________________________
+- [ ] MolStat commit recorded: _________________________________
 - [ ] MolKey commit recorded: _________________________________
+- [ ] Solide commit recorded: _________________________________
 - [ ] `requirements.lock` SHA-256 recorded: ____________________
 - [ ] Source trees were clean at the approved commits.
 
@@ -21,8 +22,9 @@ Release version: __________  Date: __________  Reviewer: __________
 - [ ] IGH Merge: _____ passed / _____ skipped.
 - [ ] VPM/HTS: _____ passed / _____ skipped.
 - [ ] MPN: _____ passed / _____ skipped.
-- [ ] LVMS-STAT: _____ passed / _____ subtests.
+- [ ] MolStat: _____ passed / _____ skipped.
 - [ ] MolKey: _____ passed / _____ skipped.
+- [ ] Solide: _____ passed / _____ skipped.
 - [ ] `scripts/verify_suite.py` passes the assembled folder.
 - [ ] Missing wheel and corrupt-checksum tests fail safely.
 - [ ] Release ZIP contains one safe top-level directory, exactly two CMD
@@ -34,15 +36,15 @@ Release version: __________  Date: __________  Reviewer: __________
 
 - [ ] Installer runs through Ivanti/Python FELLES without admin rights.
 - [ ] Installation is offline and uses the current user site.
-- [ ] Portal renders at 1024×768 with Norwegian text and six correct icons.
+- [ ] Portal renders at 1024×768 with Norwegian text and seven correct icons.
 - [ ] Ready, update, repair, and unavailable states are verified.
 - [ ] Each real module opens in a separate process and the portal remains open.
 - [ ] HemaFrag Diagnostics opens from eMolPat.
 - [ ] IGH Merge opens from eMolPat.
 - [ ] VPM / HTS Tolkning opens from eMolPat.
 - [ ] MPN Tolkning opens from eMolPat.
-- [ ] LVMS Statistikk opens from Statistikk without arguments.
-- [ ] LVMS Statistikk uses its existing Local AppData setup and K-disk paths.
+- [ ] MolStat opens from Statistikk with its existing per-user settings.
+- [ ] Solide opens from its own unit page.
 - [ ] MolKey opens from its own MolKey tab without arguments.
 - [ ] MolKey uses its configured secure-drive registry and existing settings.
 - [ ] A failed import reopens the portal with a safe message.
