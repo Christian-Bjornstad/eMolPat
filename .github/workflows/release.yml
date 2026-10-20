@@ -47,8 +47,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
-          gh release view $env:RELEASE_TAG
+          $response = gh api --include "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:RELEASE_TAG" 2>&1
           if ($LASTEXITCODE -eq 0) { throw "Release already exists: $env:RELEASE_TAG" }
+          if ("$response" -notmatch 'HTTP/\S+\s+404\b') { throw "Could not verify release availability: $response" }
+          exit 0
       - name: Isolate release build dependencies from runner tools
         shell: pwsh
         run: |
