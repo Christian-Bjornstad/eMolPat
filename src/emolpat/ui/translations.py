@@ -1,14 +1,5 @@
 """Norsk portaltekst holdt adskilt fra presentasjonskoden."""
 
-from emolpat.domain import ModuleUnit
-
-UNIT_NAVIGATION = (
-    (ModuleUnit.HEMATO, "Hemato", "Åpne hematologiske analyseverktøy"),
-    (ModuleUnit.SOLIDE, "Solide", "Verktøy for solide svulster"),
-    (ModuleUnit.STAT, "Statistikk", "Statistikkverktøy"),
-    (ModuleUnit.MOLKEY, "MolKey", "Felles verktøy for permanente pseudonymer"),
-)
-
 STATE_TEXT = {
     "ready": ("Klar til bruk", "Alle programmer er verifisert."),
     "not_installed": (

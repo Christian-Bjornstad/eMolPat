@@ -12,7 +12,9 @@ APPROVED_MODULE_IDS = (
     "mpn-tolkning",
     "molstat",
     "molkey",
+    "dragen",
     "solide",
+    "qiaxcel",
 )
 
 

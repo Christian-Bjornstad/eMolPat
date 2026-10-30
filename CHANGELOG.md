@@ -1,6 +1,23 @@
 # Changelog
 
-## [1.3.0] - Unreleased
+## [1.4.0] - Unreleased
+
+- Added DRAGEN and Qiaxcel to the nine-application catalog.
+- Updated component pins to the reviewed current development branches, including
+  HemaFrag 1.2.1 and Solide 0.8.11; missing upstream PRs are now recorded.
+- Removed explanatory card text and compacted the nine cards into three rows.
+- Updated the offline dependency set for Pillow 13, Qiaxcel PDF processing and
+  HemaFrag's native kernel 0.1.3.
+
+
+- Combined all applications on one searchable Apper page while preserving About
+  and system status.
+- Added instant name/description filtering, result counts, a clear action,
+  keyboard access through Ctrl+F, and a no-results message.
+- Preserved application running/failure states and launch restrictions while
+  filtering; cards reflow into one, two or three columns.
+
+## [1.3.0] - 2026-10-20
 
 - Replaced LVMS-STAT with MolStat and added Solide. The portal now contains
   exactly seven applications, pinned to their audited repository defaults.

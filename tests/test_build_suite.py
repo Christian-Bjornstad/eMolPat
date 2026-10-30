@@ -26,13 +26,15 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
     package_paths = []
     for name in (
         "emolpat-1.0.0-py3-none-any.whl",
-        "hemafrag_diagnostics-1.2.0-py3-none-any.whl",
+        "hemafrag_diagnostics-1.2.1-py3-none-any.whl",
         "igh_merge-0.2.0-py3-none-any.whl",
         "archer_prosess-0.1.0-py3-none-any.whl",
         "mpn_tolkning-0.1.0-py3-none-any.whl",
         "molstat-0.1.0-py3-none-any.whl",
         "molkey-0.2.0-py3-none-any.whl",
-        "solide-0.8.1-py3-none-any.whl",
+        "abl1_dragon-0.6.2-py3-none-any.whl",
+        "solide-0.8.11-py3-none-any.whl",
+        "qiaxcel_fortynning-0.2.0-py3-none-any.whl",
     ):
         path = packages / name
         path.write_bytes(name.encode())
@@ -45,10 +47,10 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
 def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.4.0", tmp_path / "dist", packages, dependencies)
 
     assert (root / "manifest.json").is_file()
-    assert len(list((root / "packages").glob("*.whl"))) == 8
+    assert len(list((root / "packages").glob("*.whl"))) == 10
     assert len(list((root / "wheelhouse").glob("*.whl"))) == 1
     manifest = load_manifest(root / "manifest.json")
     assert verify_release(root, manifest).ok
@@ -60,14 +62,16 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
         "mpn-tolkning",
         "molstat",
         "molkey",
+        "dragen",
         "solide",
+        "qiaxcel",
     ]
 
 
 def test_assembly_contains_only_verified_python_bootstraps(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.4.0", tmp_path / "dist", packages, dependencies)
 
     expected = {"install_emolpat.py", "start_emolpat.py"}
     assert not list(root.glob("*.cmd"))
@@ -79,8 +83,8 @@ def test_assembly_contains_only_verified_python_bootstraps(tmp_path: Path) -> No
 def test_two_assemblies_have_identical_manifests(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    first = assemble_release("1.3.0", tmp_path / "one", packages, dependencies)
-    second = assemble_release("1.3.0", tmp_path / "two", packages, dependencies)
+    first = assemble_release("1.4.0", tmp_path / "one", packages, dependencies)
+    second = assemble_release("1.4.0", tmp_path / "two", packages, dependencies)
 
     assert (first / "manifest.json").read_bytes() == (
         second / "manifest.json"
@@ -109,7 +113,7 @@ def test_build_rejects_dependency_version_outside_component_contract(
         _validate_dependency_matrix([package], [dependency])
 
 
-def test_assembly_requires_exactly_the_eight_approved_distributions(
+def test_assembly_requires_exactly_the_ten_approved_distributions(
     tmp_path: Path,
 ) -> None:
     packages, dependencies = create_inputs(tmp_path)
@@ -117,8 +121,8 @@ def test_assembly_requires_exactly_the_eight_approved_distributions(
         packages[-1].with_name("wrong_app-0.1.0-py3-none-any.whl")
     )
 
-    with pytest.raises(RuntimeError, match="exactly the eight approved"):
-        assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
+    with pytest.raises(RuntimeError, match="exactly the ten approved"):
+        assemble_release("1.4.0", tmp_path / "dist", packages, dependencies)
 
 
 def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
@@ -128,7 +132,7 @@ def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
     )
 
     with pytest.raises(RuntimeError, match="component wheel version"):
-        assemble_release("1.3.0", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.4.0", tmp_path / "dist", packages, dependencies)
 
 
 def test_dependency_download_targets_cpython_314_windows(
@@ -176,7 +180,7 @@ def test_build_copies_native_wheel_from_approved_component_checkout(
 ) -> None:
     component_root = tmp_path / "components"
     source = component_root / "HemaFrag-Diagnostics"
-    vendor = source / "wheels" / "fraggler_kernels-0.1.2-cp310-abi3-win_amd64.whl"
+    vendor = source / "wheels" / "fraggler_kernels-0.1.3-cp310-abi3-win_amd64.whl"
     vendor.parent.mkdir(parents=True)
     vendor.write_bytes(b"approved native dependency")
     for arguments in (
@@ -203,7 +207,7 @@ def test_build_rejects_missing_native_wheel(tmp_path: Path) -> None:
 
 def test_build_rejects_untracked_native_wheel(tmp_path: Path) -> None:
     source = tmp_path / "components" / "HemaFrag-Diagnostics"
-    vendor = source / "wheels" / "fraggler_kernels-0.1.2-cp310-abi3-win_amd64.whl"
+    vendor = source / "wheels" / "fraggler_kernels-0.1.3-cp310-abi3-win_amd64.whl"
     vendor.parent.mkdir(parents=True)
     vendor.write_bytes(b"unapproved native dependency")
     subprocess.run(("git", "init"), cwd=source, check=True, capture_output=True)
@@ -221,13 +225,15 @@ def test_build_suite_passes_target_to_download_and_assembly(
     names = iter(
         (
             "emolpat-0.1.0-py3-none-any.whl",
-            "hemafrag_diagnostics-1.2.0-py3-none-any.whl",
+            "hemafrag_diagnostics-1.2.1-py3-none-any.whl",
             "igh_merge-0.2.0-py3-none-any.whl",
             "archer_prosess-0.1.0-py3-none-any.whl",
             "mpn_tolkning-0.1.0-py3-none-any.whl",
             "molstat-0.1.0-py3-none-any.whl",
             "molkey-0.2.0-py3-none-any.whl",
-            "solide-0.8.1-py3-none-any.whl",
+            "abl1_dragon-0.6.2-py3-none-any.whl",
+        "solide-0.8.11-py3-none-any.whl",
+        "qiaxcel_fortynning-0.2.0-py3-none-any.whl",
         )
     )
     seen: list[tuple[str, object]] = []
@@ -240,7 +246,7 @@ def test_build_suite_passes_target_to_download_and_assembly(
     monkeypatch.setattr(
         builder,
         "assert_clean_pinned_checkouts",
-        lambda _root: [Path(str(index)) for index in range(7)],
+        lambda _root: [Path(str(index)) for index in range(9)],
     )
 
     def build_wheel(_source: Path, destination: Path) -> None:

@@ -38,6 +38,8 @@ COMPONENT_DIRECTORIES = {
     "mpn-tolkning": "MPN-Tolkning",
     "molstat": "MolStat",
     "molkey": "MolKey",
+    "dragen": "abl1-dragon",
+    "qiaxcel": "Qiaxcel-Fortynning",
     "solide": "solide",
 }
 APPROVED_DISTRIBUTIONS = {
@@ -48,7 +50,9 @@ APPROVED_DISTRIBUTIONS = {
     "mpn-tolkning",
     "molstat",
     "molkey",
+    "abl1-dragon",
     "solide",
+    "qiaxcel-fortynning",
 }
 
 
@@ -119,7 +123,7 @@ def assemble_release(
             raise RuntimeError(f"duplicate package wheel: {normalized}")
         package_versions[normalized] = str(wheel_version)
     if set(package_versions) != APPROVED_DISTRIBUTIONS:
-        raise RuntimeError("release must contain exactly the eight approved distributions")
+        raise RuntimeError("release must contain exactly the ten approved distributions")
 
     template = load_manifest(
         PROJECT_ROOT / "src" / "emolpat" / "ui" / "resources" / "suite-manifest.json"
@@ -263,7 +267,7 @@ def _download_dependencies(destination: Path, target: PythonTarget) -> None:
 def _copy_vendored_wheels(component_root: Path, destination: Path) -> None:
     """Collect the native wheel shipped in the immutable HemaFrag source pin."""
     source = component_root / COMPONENT_DIRECTORIES["hemafrag"]
-    relative = "wheels/fraggler_kernels-0.1.2-cp310-abi3-win_amd64.whl"
+    relative = "wheels/fraggler_kernels-0.1.3-cp310-abi3-win_amd64.whl"
     wheel = source / relative
     if not wheel.is_file():
         raise RuntimeError(f"missing approved vendored wheel: {relative}")
@@ -372,7 +376,7 @@ def build_suite(
     component_root: Path,
     target: PythonTarget = PYTHON_314,
 ) -> Path:
-    """Build eight package wheels, collect Windows dependencies, and assemble."""
+    """Build ten package wheels, collect Windows dependencies, and assemble."""
     if not validate_manifest_consistency(version):
         raise ValueError(
             f"suite version {version!r} does not match the bundled manifest"
@@ -388,7 +392,7 @@ def build_suite(
         for source in component_sources:
             _build_wheel(source, package_dir)
         if len(list(package_dir.glob("*.whl"))) != len(APPROVED_DISTRIBUTIONS):
-            raise RuntimeError("suite build must produce exactly eight package wheels")
+            raise RuntimeError("suite build must produce exactly ten package wheels")
         _download_dependencies(dependency_dir, target)
         _copy_vendored_wheels(component_root.resolve(), dependency_dir)
         _validate_dependency_matrix(
