@@ -108,7 +108,15 @@ def test_launchers_discard_cached_portal_modules(monkeypatch, tmp_path, name):
     monkeypatch.setitem(
         namespace["main"].__globals__, "activate_user_site", inspect_then_stop
     )
-    assert namespace["main"]() == 1
+    cached = {
+        key: value
+        for key, value in sys.modules.items()
+        if key == "emolpat" or key.startswith("emolpat.")
+    }
+    try:
+        assert namespace["main"]() == 1
+    finally:
+        sys.modules.update(cached)
 
 
 def test_start_refuses_an_older_installed_portal():
