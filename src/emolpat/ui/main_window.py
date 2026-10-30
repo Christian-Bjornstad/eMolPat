@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QCloseEvent
+from PyQt6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -21,7 +22,6 @@ from PyQt6.QtWidgets import (
 from emolpat.domain import (
     HealthReport,
     InstallResult,
-    ModuleUnit,
     SuiteManifest,
     SuiteState,
 )
@@ -29,7 +29,6 @@ from emolpat.ui.status_dialog import SystemStatusDialog
 from emolpat.ui.translations import (
     INSTALL_COMPLETE_TEXT,
     INSTALL_STAGE_TEXT,
-    UNIT_NAVIGATION,
 )
 from emolpat.ui.widgets import ApplicationCard, ApplicationGrid, StatusControl
 
@@ -89,6 +88,7 @@ QPushButton#navigationButton:checked {
 QPushButton#navigationButton:focus { 
     border: 2px solid #8FD0CA; 
     background: #E4F2F0; 
+    color: #073F43;
 }
 
 /* Page Titles */
@@ -102,6 +102,23 @@ QLabel#pageTitle {
 QLabel#pageIntro { 
     color: #567174; 
     font-size: 14px; 
+}
+
+QLineEdit#appSearch {
+    background: white;
+    color: #12383B;
+    border: 1px solid #B7C9CC;
+    border-radius: 7px;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+QLineEdit#appSearch:focus {
+    border: 2px solid #1D7A78;
+    padding: 9px 13px;
+}
+QLabel#searchResults {
+    color: #567174;
+    font-size: 13px;
 }
 
 /* About Creator */
@@ -245,8 +262,9 @@ QScrollArea {
     border: 0; 
     background: transparent; 
 }
-QWidget#cardsContainer, QScrollArea QWidget#qt_scrollarea_viewport { 
-    background: #F5F6FA; 
+QWidget#cardsContainer, QWidget#searchResults, QWidget#emptyResults,
+QScrollArea QWidget#qt_scrollarea_viewport {
+    background: #EDF4F6;
 }
 
 """
@@ -280,6 +298,8 @@ class MainWindow(QMainWindow):
         self.resize(1200, 800)
         self.setStyleSheet(STYLESHEET)
         self._build_ui()
+        self.search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        self.search_shortcut.activated.connect(self._focus_search)
 
     def card(self, module_id: str) -> ApplicationCard:
         for card in self.application_cards:
@@ -358,20 +378,19 @@ class MainWindow(QMainWindow):
 
         group = QButtonGroup(self)
         group.setExclusive(True)
-        for index, (_unit, label, accessible_description) in enumerate(
-            UNIT_NAVIGATION
-        ):
-            button = QPushButton(label)
-            button.setObjectName("navigationButton")
-            button.setCheckable(True)
-            button.setMinimumHeight(44)
-            button.setAccessibleName(label)
-            button.setAccessibleDescription(accessible_description)
-            button.clicked.connect(lambda _checked, page=index: self.pages.setCurrentIndex(page))
-            group.addButton(button)
-            layout.addWidget(button)
-            self.navigation_buttons.append(button)
-        self.navigation_buttons[0].setChecked(True)
+        apps_button = QPushButton("Apper")
+        apps_button.setObjectName("navigationButton")
+        apps_button.setCheckable(True)
+        apps_button.setChecked(True)
+        apps_button.setMinimumHeight(44)
+        apps_button.setAccessibleName("Apper")
+        apps_button.setAccessibleDescription("Finn og åpne alle tilgjengelige apper")
+        apps_button.clicked.connect(
+            lambda: self.pages.setCurrentWidget(self.applications_page)
+        )
+        group.addButton(apps_button)
+        layout.addWidget(apps_button)
+        self.navigation_buttons.append(apps_button)
         layout.addStretch(1)
 
         self.about_button = QPushButton("Om eMolPat")
@@ -406,19 +425,9 @@ class MainWindow(QMainWindow):
         self.install_progress.setAccessibleName("Installasjonsstatus")
 
         self.pages = QStackedWidget()
-        self.unit_pages: dict[ModuleUnit, QWidget] = {}
-        for unit, label, _description in UNIT_NAVIGATION:
-            page = self._build_applications_page(unit, label)
-            self.unit_pages[unit] = page
-            self.pages.addWidget(page)
-        self.solide_page = self.unit_pages[ModuleUnit.SOLIDE]
-        self.stat_page = self.unit_pages[ModuleUnit.STAT]
-        self.molkey_page = self.unit_pages[ModuleUnit.MOLKEY]
+        self.applications_page = self._build_applications_page()
+        self.pages.addWidget(self.applications_page)
         self.status_banner = self.status_controls[0]
-        module_order = {
-            module.id: index for index, module in enumerate(self.manifest.modules)
-        }
-        self.application_cards.sort(key=lambda card: module_order[card.module_id])
         self.about_page = self._build_about_page()
         self.pages.addWidget(self.about_page)
 
@@ -429,9 +438,7 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(16
-
-        )
+        layout.setSpacing(16)
         title = QLabel("Om eMolPat")
         title.setObjectName("pageTitle")
         names = [module.name for module in self.manifest.modules]
@@ -459,19 +466,14 @@ class MainWindow(QMainWindow):
         layout.addStretch(1)
         return page
 
-    def _build_applications_page(
-        self,
-        unit: ModuleUnit,
-        title_text: str,
-    ) -> QWidget:
+    def _build_applications_page(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(20
-        )
-        title = QLabel(title_text)
+        layout.setSpacing(16)
+        title = QLabel("Apper")
         title.setObjectName("pageTitle")
-        intro = QLabel("Velg analyseprogrammet du ønsker å åpne.")
+        intro = QLabel("Alle verktøyene dine på ett sted. Finn appen du vil åpne.")
         intro.setObjectName("pageIntro")
         intro.setWordWrap(True)
 
@@ -493,23 +495,82 @@ class MainWindow(QMainWindow):
         )
         layout.addLayout(heading)
 
-        unit_modules = tuple(
-            module for module in self.manifest.modules if module.unit is unit
+        self.app_search = QLineEdit()
+        self.app_search.setObjectName("appSearch")
+        self.app_search.setPlaceholderText("Søk etter appnavn eller beskrivelse …")
+        self.app_search.setAccessibleName("Søk etter apper")
+        self.app_search.setAccessibleDescription(
+            "Filtrer apper etter navn eller beskrivelse. Ctrl+F åpner søket."
         )
-        unit_cards = []
-        for module in unit_modules:
+        self.app_search.setClearButtonEnabled(True)
+        self.app_search.setMinimumHeight(44)
+        layout.addWidget(self.app_search)
+
+        self.results_label = QLabel()
+        self.results_label.setObjectName("searchResults")
+        layout.addWidget(self.results_label)
+
+        for module in self.manifest.modules:
             card = ApplicationCard(module, enabled=ready)
             card.open_button.clicked.connect(
                 lambda _checked, module_id=module.id: self._open_module(module_id)
             )
-            unit_cards.append(card)
             self.application_cards.append(card)
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(ApplicationGrid(unit_cards))
-        layout.addWidget(scroll, 1)
+        self.application_grid = ApplicationGrid(self.application_cards)
+        self.empty_results = QWidget()
+        self.empty_results.setObjectName("emptyResults")
+        empty_layout = QVBoxLayout(self.empty_results)
+        empty_layout.setContentsMargins(24, 32, 24, 32)
+        empty_title = QLabel("Ingen apper funnet")
+        empty_title.setObjectName("moduleName")
+        empty_title.setWordWrap(True)
+        empty_detail = QLabel("Prøv et annet søkeord, eller tøm søket for å se alle appene.")
+        empty_detail.setObjectName("pageIntro")
+        empty_detail.setWordWrap(True)
+        self.clear_search_button = QPushButton("Vis alle apper")
+        self.clear_search_button.setObjectName("primaryButton")
+        self.clear_search_button.setMinimumHeight(44)
+        self.clear_search_button.setAccessibleName("Tøm søket og vis alle apper")
+        self.clear_search_button.clicked.connect(self._clear_search)
+        empty_layout.addWidget(empty_title)
+        empty_layout.addWidget(empty_detail)
+        empty_layout.addWidget(self.clear_search_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        empty_layout.addStretch(1)
+
+        self.search_results = QStackedWidget()
+        self.search_results.setObjectName("searchResults")
+        self.search_results.addWidget(self.application_grid)
+        self.search_results.addWidget(self.empty_results)
+        self.app_scroll = QScrollArea()
+        self.app_scroll.setWidgetResizable(True)
+        self.app_scroll.setWidget(self.search_results)
+        layout.addWidget(self.app_scroll, 1)
+        self.app_search.textChanged.connect(self._filter_applications)
+        self._filter_applications("")
         return page
+
+    def _filter_applications(self, query: str) -> None:
+        count = self.application_grid.filter_cards(query)
+        total = len(self.application_cards)
+        self.results_label.setText(
+            f"{count} av {total} apper" if query.strip()
+            else f"{total} {'app' if total == 1 else 'apper'}"
+        )
+        self.search_results.setCurrentWidget(
+            self.application_grid if count else self.empty_results
+        )
+        self.app_scroll.verticalScrollBar().setValue(0)
+
+    def _clear_search(self) -> None:
+        self.app_search.clear()
+        self.app_search.setFocus()
+
+    def _focus_search(self) -> None:
+        self.pages.setCurrentWidget(self.applications_page)
+        self.navigation_buttons[0].setChecked(True)
+        self.app_search.setFocus()
+        self.app_search.selectAll()
 
     def _request_install(self) -> None:
         if not self._install_running:

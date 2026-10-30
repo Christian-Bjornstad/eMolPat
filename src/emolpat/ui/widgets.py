@@ -70,6 +70,9 @@ class ApplicationCard(QFrame):
     def __init__(self, module: ModuleSpec, enabled: bool) -> None:
         super().__init__()
         self.module_id = module.id
+        self.search_text = (
+            f"{module.name} {module.description_nb} {module.description_en}"
+        ).casefold()
         self.module_icon = module_icon(module.id)
         self.setObjectName("applicationCard")
         self.setAccessibleName(f"{module.name}, versjon {module.version}")
@@ -208,6 +211,7 @@ class ApplicationGrid(QWidget):
         super().__init__()
         self.setObjectName("cardsContainer")
         self.cards = cards
+        self.filtered_cards = list(cards)
         self.columns = 1
         self.grid = QGridLayout(self)
         self.grid.setContentsMargins(0, 0, 0, 0)
@@ -218,11 +222,24 @@ class ApplicationGrid(QWidget):
     def _arrange_cards(self) -> None:
         for card in self.cards:
             self.grid.removeWidget(card)
-        for index, card in enumerate(self.cards):
+        for index, card in enumerate(self.filtered_cards):
             self.grid.addWidget(card, index // self.columns, index % self.columns)
 
+    def filter_cards(self, query: str) -> int:
+        """Filter existing cards in place so running and failure states survive."""
+        terms = query.casefold().split()
+        self.filtered_cards = []
+        for card in self.cards:
+            matches = all(term in card.search_text for term in terms)
+            card.setVisible(matches)
+            if matches:
+                self.filtered_cards.append(card)
+        self._arrange_cards()
+        return len(self.filtered_cards)
+
     def resizeEvent(self, event: QResizeEvent) -> None:
-        columns = 2 if event.size().width() >= 650 else 1
+        width = event.size().width()
+        columns = 3 if width >= 1100 else 2 if width >= 650 else 1
         if columns != self.columns:
             self.columns = columns
             self._arrange_cards()

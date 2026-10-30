@@ -6,7 +6,6 @@ from PyQt6.QtWidgets import QLabel, QScrollArea
 from emolpat.domain import (
     HealthReport,
     InstallResult,
-    ModuleUnit,
     SuiteManifest,
     SuiteState,
 )
@@ -35,74 +34,28 @@ def test_portal_shows_seven_real_modules(
     assert all(card.open_button.isEnabled() for card in window.application_cards)
 
 
-def test_sidebar_contains_only_units_and_about(
-    qtbot,
-    manifest: SuiteManifest,
-    ready_report: HealthReport,
-) -> None:
+def test_sidebar_contains_only_apps_and_about(qtbot, manifest, ready_report):
     window = MainWindow(manifest, ready_report)
     qtbot.addWidget(window)
 
-    labels = [button.text() for button in window.navigation_buttons]
-    assert labels == ["Hemato", "Solide", "Statistikk", "MolKey", "Om eMolPat"]
-    assert "Systemstatus" not in labels
-    assert "Oppdater" not in labels
-
-
-def test_hemato_contains_all_four_real_apps(
-    qtbot,
-    manifest: SuiteManifest,
-    ready_report: HealthReport,
-) -> None:
-    window = MainWindow(manifest, ready_report)
-    qtbot.addWidget(window)
-
-    hemato_cards = window.unit_pages[ModuleUnit.HEMATO].findChildren(ApplicationCard)
-    assert [card.module_id for card in hemato_cards] == [
-        "hemafrag",
-        "igh-merge",
-        "vpm-tolkning",
-        "mpn-tolkning",
+    assert [button.text() for button in window.navigation_buttons] == [
+        "Apper", "Om eMolPat"
     ]
+    assert window.pages.count() == 2
+    assert window.pages.currentWidget() is window.applications_page
 
 
-def test_solide_and_stat_contain_the_current_apps(
-    qtbot,
-    manifest: SuiteManifest,
-    ready_report: HealthReport,
-) -> None:
+def test_all_apps_share_the_default_page(qtbot, manifest, ready_report):
     window = MainWindow(manifest, ready_report)
     qtbot.addWidget(window)
+    window.show()
 
-    solide_copy = " ".join(
-        label.text() for label in window.solide_page.findChildren(QLabel)
-    )
-    stat_copy = " ".join(
-        label.text() for label in window.stat_page.findChildren(QLabel)
-    )
-    assert "Solide" in solide_copy
-    assert [card.module_id for card in window.solide_page.findChildren(ApplicationCard)] == [
-        "solide"
-    ]
-    assert "MolStat" in stat_copy
-    assert "LVMS Statistikk" not in stat_copy
-    assert window.card("molstat").open_button.text() == "Åpne app"
-    assert window.card("molstat").open_button.isEnabled()
-    assert window.card("solide").open_button.isEnabled()
-
-
-def test_molkey_has_its_own_cross_cutting_page(
-    qtbot,
-    manifest: SuiteManifest,
-    ready_report: HealthReport,
-) -> None:
-    window = MainWindow(manifest, ready_report)
-    qtbot.addWidget(window)
-
-    molkey_cards = window.unit_pages[ModuleUnit.MOLKEY].findChildren(ApplicationCard)
-    assert [card.module_id for card in molkey_cards] == ["molkey"]
-    assert window.card("molkey").open_button.text() == "Åpne app"
-    assert window.card("molkey").open_button.isEnabled()
+    cards = window.applications_page.findChildren(ApplicationCard)
+    assert {card.module_id for card in cards} == {
+        module.id for module in manifest.modules
+    }
+    assert all(card.isVisibleTo(window) for card in cards)
+    assert window.results_label.text() == "7 apper"
 
 
 def test_molkey_launches_and_keeps_portal_open(
@@ -124,7 +77,7 @@ def test_molkey_launches_and_keeps_portal_open(
     assert window.isVisible()
 
 
-def test_molstat_launches_from_stat_and_blocks_duplicate_clicks(
+def test_molstat_launches_from_catalog_and_blocks_duplicate_clicks(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -451,21 +404,14 @@ def test_installation_disables_launch_until_finished(
     assert all(card.open_button.isEnabled() for card in window.application_cards)
 
 
-def test_each_unit_page_can_open_system_status(
-    qtbot,
-    manifest: SuiteManifest,
-    ready_report: HealthReport,
-) -> None:
+def test_catalog_can_open_system_status(qtbot, manifest, ready_report):
     window = MainWindow(manifest, ready_report)
     qtbot.addWidget(window)
     window.show()
 
-    for page in window.unit_pages.values():
-        window.pages.setCurrentWidget(page)
-        status = page.findChild(StatusControl)
-        qtbot.mouseClick(status, Qt.MouseButton.LeftButton)
-        assert window.status_dialog.isVisible()
-        window.status_dialog.close()
+    status = window.applications_page.findChild(StatusControl)
+    qtbot.mouseClick(status, Qt.MouseButton.LeftButton)
+    assert window.status_dialog.isVisible()
 
 
 def test_compact_window_reflows_cards_without_horizontal_scrolling(
@@ -477,8 +423,8 @@ def test_compact_window_reflows_cards_without_horizontal_scrolling(
     qtbot.addWidget(window)
     window.resize(760, 520)
     window.show()
-    grid = window.unit_pages[ModuleUnit.HEMATO].findChild(ApplicationGrid)
-    scroll = window.unit_pages[ModuleUnit.HEMATO].findChild(QScrollArea)
+    grid = window.applications_page.findChild(ApplicationGrid)
+    scroll = window.applications_page.findChild(QScrollArea)
 
     qtbot.waitUntil(lambda: grid.columns == 1)
 

@@ -1,6 +1,15 @@
 # Changelog
 
-## [1.3.0] - Unreleased
+## [Unreleased]
+
+- Combined all applications on one searchable Apper page while preserving About
+  and system status.
+- Added instant name/description filtering, result counts, a clear action,
+  keyboard access through Ctrl+F, and a no-results message.
+- Preserved application running/failure states and launch restrictions while
+  filtering; cards reflow into one, two or three columns.
+
+## [1.3.0] - 2026-10-20
 
 - Replaced LVMS-STAT with MolStat and added Solide. The portal now contains
   exactly seven applications, pinned to their audited repository defaults.

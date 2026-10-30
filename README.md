@@ -38,18 +38,34 @@ Download the GitHub Release asset named `eMolPat-<version>-windows.zip`. Do **no
 eMolPat packages seven existing laboratory applications as one locally installed Windows suite. Laboratory staff open a single Norwegian portal, choose the required application, and continue in that application's established standalone workflow. Each application starts in a separate Python FELLES process while the portal remains open and responsive.
 
 <p align="center">
-  <img src="docs/assets/portal-overview-v3.png" width="920" alt="eMolPat portal for independently launched laboratory applications">
+  <img src="docs/assets/portal-catalog-preview.png" width="920" alt="Development preview: all apps on one searchable eMolPat page">
 </p>
 
 | Area | Current implementation |
 |---|---|
-| Portal | Norwegian PyQt6 dashboard with canonical application icons |
+| Portal | One searchable application catalog, plus About and system status |
 | Applications | HemaFrag Diagnostics, IGH Merge, VPM/HTS Tolkning, MPN Tolkning, MolStat, MolKey, and Solide |
 | Launch model | Portal remains open while each approved application runs in a separate process |
 | Installation | Complete offline `pip --user` installation through Python FELLES |
 | Release trust | Immutable manifest, exact component commits, SHA-256 checksums, and a hashed dependency lock |
 | Recovery | Health states, repair, retained-version rollback, and redacted rotating logs |
 | Data handling | No clinical data is centralized, copied, uploaded, or logged by the portal |
+
+### Application catalog (development)
+
+All applications appear on **Apper**. Search filters app names and Norwegian or
+English descriptions as you type, ignores case and extra spaces, and matches all
+entered words. Clear the field to restore the complete catalog. **Ctrl+F** opens
+and focuses search, including from **Om eMolPat**. Running status and launch
+availability remain attached to each app while results are filtered.
+
+Cards adapt to one, two or three columns according to the window width. The
+catalog is scrollable, and new manifest entries appear automatically. Application
+packaging and the approved component set are maintained through the existing
+release contract.
+
+The screenshot shows this development change, intended for the next release.
+The published 1.3.0 offline package remains available from GitHub Releases.
 
 ## Why eMolPat
 
