@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="eMolPat suite 1.3.0" src="https://img.shields.io/badge/eMolPat-Suite%201.3.0-0c6669">
+  <img alt="eMolPat suite 1.4.0" src="https://img.shields.io/badge/eMolPat-Suite%201.4.0-0c6669">
   <img alt="Portal Python 3.12 through 3.15" src="https://img.shields.io/badge/Portal_Python-3.12%E2%80%933.15-3776AB?logo=python&amp;logoColor=white">
   <img alt="PyQt6 desktop portal" src="https://img.shields.io/badge/Desktop-PyQt6-41CD52?logo=qt&amp;logoColor=white">
   <img alt="Windows workstation" src="https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows&amp;logoColor=white">
@@ -28,14 +28,14 @@
   <a href="https://github.com/Christian-Bjornstad/eMolPat/releases"><strong>Download eMolPat for Windows</strong></a>
 </p>
 
-Download the GitHub Release asset named `eMolPat-<version>-windows.zip`. Do **not** use **Code > Download ZIP**: that archive contains source code only and does not include the seven applications or their offline dependencies.
+Download the GitHub Release asset named `eMolPat-<version>-windows.zip`. Do **not** use **Code > Download ZIP**: that archive contains source code only and does not include the nine applications or their offline dependencies.
 
 > [!IMPORTANT]
 > eMolPat is a launcher, release manager, and health boundary for controlled laboratory software. It does not perform molecular analysis itself. Patient files, clinical inputs, reports, credentials, and application settings remain owned by the individual analysis applications and are deliberately excluded from this repository.
 
 ## Overview
 
-eMolPat packages seven existing laboratory applications as one locally installed Windows suite. Laboratory staff open a single Norwegian portal, choose the required application, and continue in that application's established standalone workflow. Each application starts in a separate Python FELLES process while the portal remains open and responsive.
+eMolPat packages nine existing laboratory applications as one locally installed Windows suite. Laboratory staff open a single Norwegian portal, choose the required application, and continue in that application's established standalone workflow. Each application starts in a separate Python FELLES process while the portal remains open and responsive.
 
 <p align="center">
   <img src="docs/assets/portal-catalog-preview.png" width="920" alt="Development preview: all apps on one searchable eMolPat page">
@@ -44,7 +44,7 @@ eMolPat packages seven existing laboratory applications as one locally installed
 | Area | Current implementation |
 |---|---|
 | Portal | One searchable application catalog, plus About and system status |
-| Applications | HemaFrag Diagnostics, IGH Merge, VPM/HTS Tolkning, MPN Tolkning, MolStat, MolKey, and Solide |
+| Applications | HemaFrag, IGH Merge, VPM/HTS Tolkning, MPN Tolkning, MolStat, MolKey, DRAGEN, Solide, and Qiaxcel |
 | Launch model | Portal remains open while each approved application runs in a separate process |
 | Installation | Complete offline `pip --user` installation through Python FELLES |
 | Release trust | Immutable manifest, exact component commits, SHA-256 checksums, and a hashed dependency lock |
@@ -53,19 +53,18 @@ eMolPat packages seven existing laboratory applications as one locally installed
 
 ### Application catalog (development)
 
-All applications appear on **Apper**. Search filters app names and Norwegian or
-English descriptions as you type, ignores case and extra spaces, and matches all
+All applications appear on **Apper**. Search filters app names and hidden search metadata as you type, ignores case and extra spaces, and matches all
 entered words. Clear the field to restore the complete catalog. **Ctrl+F** opens
 and focuses search, including from **Om eMolPat**. Running status and launch
 availability remain attached to each app while results are filtered.
 
-Cards adapt to one, two or three columns according to the window width. The
+Cards show only the icon, name, version, status and launch action. Cards adapt to one, two or three columns according to the window width. The
 catalog is scrollable, and new manifest entries appear automatically. Application
 packaging and the approved component set are maintained through the existing
 release contract.
 
 The screenshot shows this development change, intended for the next release.
-The published 1.3.0 offline package remains available from GitHub Releases.
+The published 1.3.0 package remains available from GitHub Releases; this nine-app change is a 1.4.0 candidate.
 
 ## Why eMolPat
 
@@ -80,21 +79,23 @@ The published 1.3.0 offline package remains available from GitHub Releases.
 
 | Application | Purpose | Package entry point |
 |---|---|---|
-| HemaFrag Diagnostics | Fragment analysis, quality control, review, and reporting | `hemafrag_diagnostics.__main__:main` |
+| HemaFrag | Fragment analysis, quality control, review, and reporting | `hemafrag_diagnostics.__main__:main` |
 | IGH Merge | Merge and verify IGHV-SHM results | `igh_merge.__main__:main` |
 | VPM / HTS Tolkning | Variant review, evidence collection, and reporting | `archer_processor.__main__:main` |
 | MPN Tolkning | Evidence review for JAK2, CALR, and MPL | `mpn_tolkning.__main__:main` |
 | MolStat | Statistics, backlog, and operational insight from LVMS | `emolpat.entrypoints:launch_molstat` |
 | MolKey | Create and retrieve permanent pseudonyms in its standalone registry workflow | `molkey.__main__:main` |
+| DRAGEN | BCR::ABL1 variant review | `abl1_workstation.__main__:main` |
 | Solide | Variant review and reporting for solid tumours | `solide.__main__:main` |
+| Qiaxcel | QIAxcel PDF and dilution workflow | `qiaxcel.__main__:main` |
 
-Every release pins the exact Git commit, distribution name, version, import name, and official entry point for all seven applications.
+Every release pins the exact Git commit, distribution name, version, import name, and official entry point for all nine applications.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    A["Approved component commits"] --> B["Eight package wheels"]
+    A["Approved component commits"] --> B["Ten package wheels"]
     B --> C["Hash-locked offline suite"]
     C --> D["Per-user installation"]
     D --> E["eMolPat health verification"]
@@ -107,13 +108,13 @@ flowchart LR
 An approved release contains:
 
 ```text
-eMolPat-1.3.0/
+eMolPat-1.4.0/
 ├── Installer eMolPat.cmd
 ├── Start eMolPat.cmd
 └── suite/                     Protected, verified offline payload
     ├── manifest.json
     ├── requirements.lock
-    ├── packages/              Portal plus seven application wheels
+    ├── packages/              Portal plus nine application wheels
     ├── wheelhouse/            Exact offline Windows dependencies
     ├── install_emolpat.py
     └── start_emolpat.py
@@ -133,22 +134,22 @@ The initial deployment model targets Sykehuspartner-managed Windows computers us
 2. Extract the complete ZIP to a normal local folder; do not run files from inside the archive.
 3. Run **Installer eMolPat.cmd** from the extracted folder.
 4. Ivanti opens Python FELLES and the installer copies a local Python command to the clipboard.
-5. Paste with `Ctrl+V`, press Enter, and wait until all eight packages are installed and verified.
+5. Paste with `Ctrl+V`, press Enter, and wait until all ten packages are installed and verified.
 6. Run **Start eMolPat.cmd** from the same folder for normal launches.
 
 Installation is offline, uses `pip --user`, and writes the verified suite record only after all packages and imports pass. See the [Python FELLES guide](docs/operations/python-felles.md) for the complete operator workflow and the [repair guide](docs/operations/repair.md) for controlled recovery.
 
 ### Python FELLES 3.14 release candidate
 
-The `1.3.0` candidate contains exactly the seven applications above. MolStat
+The `1.4.0` candidate contains exactly the nine applications above. MolStat
 replaces LVMS-STAT; Solide is now available under its own unit. Component
 sources follow the current repository defaults, plus the MolStat test portability
 fix recorded in the
-[repository audit](docs/validation/2026-10-20-repository-audit.md).
+[repository audit](docs/validation/2026-10-30-component-audit.md).
 
 This candidate is built and checked locally before publication. Published older
 ZIPs still contain their original component set. See the
-[1.3.0 candidate notes](docs/releases/1.3.0.md) and the
+[1.4.0 candidate notes](docs/releases/1.4.0.md) and the
 [Python compatibility policy](docs/operations/python-support.md).
 
 ## Health and recovery
@@ -198,14 +199,14 @@ Build and verify the atomic Windows release:
 
 ```powershell
 py -3.12 scripts\build_suite.py `
-  --version 1.3.0 `
+  --version 1.4.0 `
   --output dist `
   --component-root C:\path\to\eMolPat-components
 
-py -3.12 scripts\verify_suite.py dist\eMolPat-1.3.0
+py -3.12 scripts\verify_suite.py dist\eMolPat-1.4.0
 ```
 
-The build requires clean component trees at the exact commits in [`release/components.json`](release/components.json). It produces eight normalized package wheels, collects the checked-in hash-locked Windows dependency set, validates every transitive requirement, requested extra, target Python constraint, and wheel ABI, and writes a sorted cryptographic manifest.
+The build requires clean component trees at the exact commits in [`release/components.json`](release/components.json). It produces ten normalized package wheels, collects the checked-in hash-locked Windows dependency set, validates every transitive requirement, requested extra, target Python constraint, and wheel ABI, and writes a sorted cryptographic manifest.
 
 Current validation coverage includes manifest parsing, release integrity, health derivation, child-process lifecycle, redaction, rollback, deterministic assembly, Python FELLES launchers, offscreen UI behavior, and a synthetic end-to-end workflow. Release publication additionally requires the [managed-workstation checklist](docs/validation/release-checklist.md).
 
@@ -232,8 +233,8 @@ eMolPat/
 - [Install through Python FELLES](docs/operations/python-felles.md)
 - [Repair the complete suite](docs/operations/repair.md)
 - [Managed-workstation release checklist](docs/validation/release-checklist.md)
-- [eMolPat 1.3.0 release notes](docs/releases/1.3.0.md)
+- [eMolPat 1.4.0 release notes](docs/releases/1.4.0.md)
 
 ## Release status
 
-Version 1.3.0 is a release candidate. Automated evidence and remaining limitations are recorded in its release notes. Managed-workstation installation through Ivanti/Python FELLES and the laboratory release checklist remain the operational acceptance steps.
+Version 1.4.0 is a release candidate. Automated evidence and remaining limitations are recorded in its release notes. Managed-workstation installation through Ivanti/Python FELLES and the laboratory release checklist remain the operational acceptance steps.

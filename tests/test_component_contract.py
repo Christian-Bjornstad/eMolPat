@@ -20,7 +20,9 @@ def test_every_component_has_an_immutable_revision() -> None:
         "mpn-tolkning",
         "molstat",
         "molkey",
+        "dragen",
         "solide",
+        "qiaxcel",
     ]
     assert all(re.fullmatch(r"[0-9a-f]{40}", item.commit) for item in components)
     assert {item.import_name for item in components} == {
@@ -30,10 +32,10 @@ def test_every_component_has_an_immutable_revision() -> None:
         "mpn_tolkning",
         "molstat",
         "molkey",
+        "abl1_workstation",
         "solide",
+        "qiaxcel",
     }
-    assert components[2].commit == "249b82345761ff2facf78e35b3da1571f8af4195"
-    assert components[-1].commit == "4ff2b04d387a21896ec3bbd05f40e641de645f2c"
     assert all("LVMS-STAT" not in item.repository for item in components)
 
 
@@ -48,6 +50,8 @@ def test_component_entrypoints_are_callable_paths() -> None:
         "emolpat.entrypoints:launch_molstat",
         "molkey.__main__:main",
         "solide.__main__:main",
+        "abl1_workstation.__main__:main",
+        "qiaxcel.__main__:main",
     }
 
 

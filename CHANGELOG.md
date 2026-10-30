@@ -1,6 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [1.4.0] - Unreleased
+
+- Added DRAGEN and Qiaxcel to the nine-application catalog.
+- Updated component pins to the reviewed current development branches, including
+  HemaFrag 1.2.1 and Solide 0.8.11; missing upstream PRs are now recorded.
+- Removed explanatory card text and compacted the nine cards into three rows.
+- Updated the offline dependency set for Pillow 13, Qiaxcel PDF processing and
+  HemaFrag's native kernel 0.1.3.
+
 
 - Combined all applications on one searchable Apper page while preserving About
   and system status.

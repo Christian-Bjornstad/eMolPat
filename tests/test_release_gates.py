@@ -43,7 +43,7 @@ def test_component_gate_runs_declared_commands_with_active_python(tmp_path: Path
         python_executable="C:/Python314/python.exe",
     )
 
-    assert len(calls) == 14
+    assert len(calls) == 18
     for index in range(0, len(calls), 2):
         install, install_options = calls[index]
         command, test_options = calls[index + 1]
@@ -69,13 +69,15 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
 ) -> None:
     versions = {
         "emolpat": "0.2.0",
-        "hemafrag-diagnostics": "1.2.0",
+        "hemafrag-diagnostics": "1.2.1",
         "igh-merge": "0.2.0",
         "archer-prosess": "0.1.0",
         "mpn-tolkning": "0.1.0",
         "molstat": "0.1.0",
         "molkey": "0.2.0",
-        "solide": "0.8.1",
+        "solide": "0.8.11",
+        "abl1-dragon": "0.6.2",
+        "qiaxcel-fortynning": "0.2.0",
     }
     imported = []
 
@@ -112,7 +114,35 @@ def test_installed_suite_gate_resolves_all_zero_argument_entry_points(
         "emolpat.entrypoints",
         "molkey",
         "molkey.__main__",
+        "abl1_workstation",
+        "abl1_workstation.__main__",
         "solide",
         "solide.__main__",
+        "qiaxcel",
+        "qiaxcel.__main__",
     ]
-    assert "8 distributions, 7 entry points" in capsys.readouterr().out
+    assert "10 distributions, 9 entry points" in capsys.readouterr().out
+
+
+def test_component_gate_installs_declared_test_file_and_native_wheel(tmp_path):
+    calls = []
+    for directory in COMPONENT_DIRECTORIES.values():
+        source = tmp_path / directory
+        source.mkdir()
+        (source / "pyproject.toml").write_text('[project]\nname="demo"\nversion="1"\n')
+    source = tmp_path / "HemaFrag-Diagnostics"
+    requirements = source / "requirements-dev.txt"
+    requirements.write_text("PyInstaller>=6.20\n")
+    native = source / "wheels" / "fraggler_kernels-0.1.3-cp310-abi3-win_amd64.whl"
+    native.parent.mkdir()
+    native.write_bytes(b"test wheel")
+
+    def runner(command, **kwargs):
+        calls.append(tuple(command))
+        return CompletedProcess(command, 0)
+
+    run_component_tests(Path("release/components.json"), tmp_path, runner=runner,
+                        python_executable="python314")
+    assert ("python314", "-m", "pip", "install", "-r", str(requirements)) in calls
+    assert ("python314", "-m", "pip", "install", "--no-deps", str(native)) in calls
+    assert calls.index(("python314", "-m", "pip", "install", "--no-deps", str(native))) < calls.index(("python314", "-m", "pytest", "-q"))

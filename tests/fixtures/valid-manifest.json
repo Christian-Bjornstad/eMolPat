@@ -5,9 +5,9 @@
   "modules": [
     {
       "id": "hemafrag",
-      "name": "HemaFrag Diagnostics",
+      "name": "HemaFrag",
       "distribution": "hemafrag-diagnostics",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "import_name": "hemafrag_diagnostics",
       "entry_point": "hemafrag_diagnostics.__main__:main",
       "icon": "icons/hemafrag.png",
@@ -76,16 +76,40 @@
       "unit": "molkey"
     },
     {
+      "id": "dragen",
+      "name": "DRAGEN",
+      "distribution": "abl1-dragon",
+      "version": "0.6.2",
+      "import_name": "abl1_workstation",
+      "entry_point": "abl1_workstation.__main__:main",
+      "icon": "icons/dragen.png",
+      "description_nb": "BCR::ABL1 variantgjennomgang.",
+      "description_en": "BCR::ABL1 variant review.",
+      "unit": "hemato"
+    },
+    {
       "id": "solide",
       "name": "Solide",
       "distribution": "solide",
-      "version": "0.8.1",
+      "version": "0.8.11",
       "import_name": "solide",
       "entry_point": "solide.__main__:main",
       "icon": "icons/solide.png",
       "description_nb": "Variantgjennomgang og rapportering for solide svulster.",
       "description_en": "Variant review and reporting for solid tumours.",
       "unit": "solide"
+    },
+    {
+      "id": "qiaxcel",
+      "name": "Qiaxcel",
+      "distribution": "qiaxcel-fortynning",
+      "version": "0.2.0",
+      "import_name": "qiaxcel",
+      "entry_point": "qiaxcel.__main__:main",
+      "icon": "icons/qiaxcel.ico",
+      "description_nb": "QIAxcel PDF og fortynning.",
+      "description_en": "QIAxcel PDF and dilution.",
+      "unit": "hemato"
     }
   ],
   "files": [

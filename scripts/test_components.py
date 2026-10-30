@@ -49,6 +49,20 @@ def test_components(
             ),
             check=True,
         )
+        test_requirements = source / "requirements-dev.txt"
+        if test_requirements.is_file():
+            runner(
+                (python_executable, "-m", "pip", "install", "-r", str(test_requirements)),
+                cwd=source,
+                check=True,
+            )
+        if component.id == "hemafrag":
+            native = source / "wheels/fraggler_kernels-0.1.3-cp310-abi3-win_amd64.whl"
+            if native.is_file():
+                runner(
+                    (python_executable, "-m", "pip", "install", "--no-deps", str(native)),
+                    check=True,
+                )
         command = component.test_command
         if command[0].casefold() == "python":
             command = (python_executable, *command[1:])

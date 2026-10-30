@@ -21,7 +21,7 @@ def write_manifest(tmp_path: Path, data: dict[str, object]) -> Path:
     return path
 
 
-def test_load_manifest_returns_the_seven_approved_modules() -> None:
+def test_load_manifest_returns_the_nine_approved_modules() -> None:
     manifest = load_manifest(FIXTURE)
 
     assert manifest.schema_version == 1
@@ -36,6 +36,8 @@ def test_load_manifest_returns_the_seven_approved_modules() -> None:
         "Statistics, backlog, and operational insight from LVMS."
     )
     assert manifest.module("molkey").entry_point == "molkey.__main__:main"
+    assert manifest.module("dragen").name == "DRAGEN"
+    assert manifest.module("qiaxcel").entry_point == "qiaxcel.__main__:main"
     assert manifest.module("solide").entry_point == "solide.__main__:main"
     with pytest.raises(KeyError):
         manifest.module("lvms-stat")

@@ -266,7 +266,7 @@ def test_install_is_blocked_while_analysis_app_runs(
     assert warnings == [
         (
             "Lukk kjørende analyseapper før eMolPat oppdateres eller repareres.\n"
-            "Kjører: HemaFrag Diagnostics"
+            "Kjører: HemaFrag"
         )
     ]
     assert manager.running_module_ids == frozenset({"hemafrag"})
