@@ -47,7 +47,7 @@ def create_inputs(root: Path) -> tuple[list[Path], list[Path]]:
 def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.4.1", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.4.2", tmp_path / "dist", packages, dependencies)
 
     assert (root / "manifest.json").is_file()
     assert len(list((root / "packages").glob("*.whl"))) == 10
@@ -71,7 +71,7 @@ def test_assembly_contains_atomic_verified_suite(tmp_path: Path) -> None:
 def test_assembly_contains_only_verified_python_bootstraps(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    root = assemble_release("1.4.1", tmp_path / "dist", packages, dependencies)
+    root = assemble_release("1.4.2", tmp_path / "dist", packages, dependencies)
 
     expected = {"install_emolpat.py", "start_emolpat.py"}
     assert not list(root.glob("*.cmd"))
@@ -83,8 +83,8 @@ def test_assembly_contains_only_verified_python_bootstraps(tmp_path: Path) -> No
 def test_two_assemblies_have_identical_manifests(tmp_path: Path) -> None:
     packages, dependencies = create_inputs(tmp_path)
 
-    first = assemble_release("1.4.1", tmp_path / "one", packages, dependencies)
-    second = assemble_release("1.4.1", tmp_path / "two", packages, dependencies)
+    first = assemble_release("1.4.2", tmp_path / "one", packages, dependencies)
+    second = assemble_release("1.4.2", tmp_path / "two", packages, dependencies)
 
     assert (first / "manifest.json").read_bytes() == (
         second / "manifest.json"
@@ -122,7 +122,7 @@ def test_assembly_requires_exactly_the_ten_approved_distributions(
     )
 
     with pytest.raises(RuntimeError, match="exactly the ten approved"):
-        assemble_release("1.4.1", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.4.2", tmp_path / "dist", packages, dependencies)
 
 
 def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
@@ -132,7 +132,7 @@ def test_assembly_rejects_wrong_component_version(tmp_path: Path) -> None:
     )
 
     with pytest.raises(RuntimeError, match="component wheel version"):
-        assemble_release("1.4.1", tmp_path / "dist", packages, dependencies)
+        assemble_release("1.4.2", tmp_path / "dist", packages, dependencies)
 
 
 def test_dependency_download_targets_cpython_314_windows(

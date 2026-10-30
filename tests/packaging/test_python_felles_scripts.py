@@ -80,5 +80,45 @@ def test_bootstrap_accepts_python_314(
 def test_start_script_invokes_installed_suite_entrypoint() -> None:
     text = (PACKAGING / "start_emolpat.py").read_text(encoding="utf-8")
 
-    assert "from emolpat.__main__ import main" in text
+    assert "from emolpat.__main__ import bundled_manifest, main" in text
     assert "raise SystemExit(main())" in text
+
+
+def test_installer_ignores_previous_release_environment(monkeypatch, tmp_path):
+    monkeypatch.setenv("EMOLPAT_RELEASE_ROOT", str(tmp_path / "old-release"))
+    namespace = runpy.run_path(str(PACKAGING / "install_emolpat.py"))
+    assert namespace["release_root"]() == PACKAGING.resolve()
+
+
+@pytest.mark.parametrize("name", ["install_emolpat.py", "start_emolpat.py"])
+def test_launchers_discard_cached_portal_modules(monkeypatch, tmp_path, name):
+    import types
+
+    namespace = runpy.run_path(str(PACKAGING / name))
+    stale = types.ModuleType("emolpat")
+    monkeypatch.setitem(sys.modules, "emolpat", stale)
+    monkeypatch.setitem(sys.modules, "emolpat.__main__", stale)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+
+    def inspect_then_stop():
+        assert "emolpat" not in sys.modules
+        assert "emolpat.__main__" not in sys.modules
+        raise RuntimeError("controlled bootstrap stop")
+
+    monkeypatch.setitem(
+        namespace["main"].__globals__, "activate_user_site", inspect_then_stop
+    )
+    cached = {
+        key: value
+        for key, value in sys.modules.items()
+        if key == "emolpat" or key.startswith("emolpat.")
+    }
+    try:
+        assert namespace["main"]() == 1
+    finally:
+        sys.modules.update(cached)
+
+
+def test_start_refuses_an_older_installed_portal():
+    text = (PACKAGING / "start_emolpat.py").read_text(encoding="utf-8")
+    assert "bundled_manifest().suite_version != expected" in text

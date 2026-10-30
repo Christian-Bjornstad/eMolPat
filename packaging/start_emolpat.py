@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import importlib
+import json
 import os
 import site
 import sys
@@ -33,8 +35,23 @@ def _record_startup_failure(error: BaseException) -> None:
 def main() -> int:
     try:
         os.environ["EMOLPAT_RELEASE_ROOT"] = str(Path(__file__).resolve().parent)
+        for module_name in tuple(sys.modules):
+            if module_name == "emolpat" or module_name.startswith("emolpat."):
+                del sys.modules[module_name]
+        importlib.invalidate_caches()
         activate_user_site()
-        from emolpat.__main__ import main
+        from emolpat.__main__ import bundled_manifest, main
+
+        expected = json.loads(
+            (Path(__file__).resolve().parent / "manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )["suite_version"]
+        if bundled_manifest().suite_version != expected:
+            print(
+                f"Denne pakken krever eMolPat {expected}. Kjør Installer eMolPat.cmd først, og åpne deretter en ny Python FELLES-økt."
+            )
+            return 1
 
         return main()
     except Exception as error:  # noqa: BLE001 - final Python FELLES safety boundary

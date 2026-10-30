@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import os
 import site
 import sys
@@ -23,8 +24,7 @@ def activate_user_site() -> Path:
 
 
 def release_root() -> Path:
-    configured = os.environ.get("EMOLPAT_RELEASE_ROOT")
-    root = Path(configured) if configured else Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parent
     root = root.resolve()
     os.environ["EMOLPAT_RELEASE_ROOT"] = str(root)
     return root
@@ -48,6 +48,10 @@ def _record_startup_failure(error: BaseException) -> None:
 
 def main() -> int:
     try:
+        for module_name in tuple(sys.modules):
+            if module_name == "emolpat" or module_name.startswith("emolpat."):
+                del sys.modules[module_name]
+        importlib.invalidate_caches()
         activate_user_site()
         root = release_root().resolve()
         _activate_bootstrap_wheels(root)
@@ -64,8 +68,15 @@ def main() -> int:
         print("eMolPat er installert og kontrollert for denne brukeren.")
         return 0
     except Exception as error:  # noqa: BLE001 - final Python FELLES safety boundary
-        _record_startup_failure(error)
-        print("eMolPat-installasjonen kunne ikke starte. Kontakt teknisk støtte.")
+        try:
+            _record_startup_failure(error)
+        except OSError:
+            pass
+        print(f"eMolPat-installasjonen kunne ikke starte ({type(error).__name__}).")
+        print(str(error))
+        print(
+            "Lukk Python FELLES og åpne Installer eMolPat.cmd fra den nye, utpakkede mappen. Feildetaljer: %LOCALAPPDATA%\\eMolPat\\logs\\bootstrap.log"
+        )
         return 1
 
 
