@@ -51,7 +51,7 @@ eMolPat packages nine existing laboratory applications as one locally installed 
 | Recovery | Health states, repair, retained-version rollback, and redacted rotating logs |
 | Data handling | No clinical data is centralized, copied, uploaded, or logged by the portal |
 
-### Application catalog (development)
+### Application catalog
 
 All applications appear on **Apper**. Search filters app names and hidden search metadata as you type, ignores case and extra spaces, and matches all
 entered words. Clear the field to restore the complete catalog. **Ctrl+F** opens
@@ -63,8 +63,9 @@ catalog is scrollable, and new manifest entries appear automatically. Applicatio
 packaging and the approved component set are maintained through the existing
 release contract.
 
-The screenshot shows this development change, intended for the next release.
-The published 1.3.0 package remains available from GitHub Releases; this nine-app change is a 1.4.0 candidate.
+The nine-app catalog is available in the published 1.4.0 release. The current
+1.4.1 candidate refreshes the VPM, MolKey and Solide icons and simplifies
+**Om eMolPat** to show only the developer credit.
 
 ## Why eMolPat
 
@@ -141,15 +142,14 @@ Installation is offline, uses `pip --user`, and writes the verified suite record
 
 ### Python FELLES 3.14 release candidate
 
-The `1.4.0` candidate contains exactly the nine applications above. MolStat
-replaces LVMS-STAT; Solide is now available under its own unit. Component
-sources follow the current repository defaults, plus the MolStat test portability
-fix recorded in the
+The `1.4.1` candidate contains exactly the nine applications above. MolStat
+replaces LVMS-STAT. Components are pinned to the current active implementation
+branches, including changes that have not yet reached the default branches. See the
 [repository audit](docs/validation/2026-10-30-component-audit.md).
 
 This candidate is built and checked locally before publication. Published older
 ZIPs still contain their original component set. See the
-[1.4.0 candidate notes](docs/releases/1.4.0.md) and the
+[1.4.1 candidate notes](docs/releases/1.4.1.md) and the
 [Python compatibility policy](docs/operations/python-support.md).
 
 ## Health and recovery
@@ -195,15 +195,27 @@ py -3.12 -m pytest -q
 py -3.12 -m ruff check .
 ```
 
+Icon sources, exact component commits and content hashes are recorded in
+`src/emolpat/ui/resources/app-icons.json`. After updating component pins, refresh
+icons from those same commits:
+
+```powershell
+py -3.12 scripts\sync_component_icons.py --component-root C:\path\to\eMolPat-components --write
+```
+
+The release builder checks the committed Git asset bytes, the bundled icons and
+the actual portal wheel. Missing icons or an unchanged icon copied from an older
+pin block the build until the provenance is refreshed.
+
 Build and verify the atomic Windows release:
 
 ```powershell
 py -3.12 scripts\build_suite.py `
-  --version 1.4.0 `
+  --version 1.4.1 `
   --output dist `
   --component-root C:\path\to\eMolPat-components
 
-py -3.12 scripts\verify_suite.py dist\eMolPat-1.4.0
+py -3.12 scripts\verify_suite.py dist\eMolPat-1.4.1
 ```
 
 The build requires clean component trees at the exact commits in [`release/components.json`](release/components.json). It produces ten normalized package wheels, collects the checked-in hash-locked Windows dependency set, validates every transitive requirement, requested extra, target Python constraint, and wheel ABI, and writes a sorted cryptographic manifest.
@@ -237,4 +249,4 @@ eMolPat/
 
 ## Release status
 
-Version 1.4.0 is a release candidate. Automated evidence and remaining limitations are recorded in its release notes. Managed-workstation installation through Ivanti/Python FELLES and the laboratory release checklist remain the operational acceptance steps.
+Version 1.4.1 is a release candidate. Automated evidence and remaining limitations are recorded in its release notes. Managed-workstation installation through Ivanti/Python FELLES and the laboratory release checklist remain the operational acceptance steps.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from importlib.resources import files
 
 from PyQt6.QtCore import QSize, Qt
@@ -21,15 +22,12 @@ from emolpat.domain import HealthReport, ModuleSpec
 from emolpat.ui.translations import STATE_TEXT
 
 ICON_FILES = {
-    "hemafrag": "hemafrag.png",
-    "igh-merge": "igh-merge.png",
-    "vpm-tolkning": "vpm-tolkning.png",
-    "mpn-tolkning": "mpn-tolkning.png",
-    "molstat": "molstat.png",
-    "molkey": "molkey.png",
-    "dragen": "dragen.png",
-    "qiaxcel": "qiaxcel.ico",
-    "solide": "solide.png",
+    module_id: icon["bundled_file"]
+    for module_id, icon in json.loads(
+        files("emolpat.ui.resources").joinpath("app-icons.json").read_text(
+            encoding="utf-8"
+        )
+    ).items()
 }
 
 

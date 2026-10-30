@@ -29,6 +29,7 @@ from emolpat.components import load_components
 from emolpat.domain import FileDigest
 from emolpat.integrity import sha256_file
 from emolpat.manifest import load_manifest
+from scripts.sync_component_icons import sync_component_icons, validate_wheel_icons
 from scripts.validate_manifest_consistency import validate_manifest_consistency
 
 COMPONENT_DIRECTORIES = {
@@ -382,6 +383,7 @@ def build_suite(
             f"suite version {version!r} does not match the bundled manifest"
         )
     component_sources = assert_clean_pinned_checkouts(component_root.resolve())
+    sync_component_icons(component_root.resolve())
     with tempfile.TemporaryDirectory(prefix="emolpat-build-") as temporary:
         staging = Path(temporary)
         package_dir = staging / "packages"
@@ -389,6 +391,7 @@ def build_suite(
         package_dir.mkdir()
         dependency_dir.mkdir()
         _build_wheel(PROJECT_ROOT, package_dir)
+        validate_wheel_icons(next(package_dir.glob("emolpat-*.whl")))
         for source in component_sources:
             _build_wheel(source, package_dir)
         if len(list(package_dir.glob("*.whl"))) != len(APPROVED_DISTRIBUTIONS):
