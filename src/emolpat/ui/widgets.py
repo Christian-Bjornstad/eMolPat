@@ -27,6 +27,8 @@ ICON_FILES = {
     "mpn-tolkning": "mpn-tolkning.png",
     "molstat": "molstat.png",
     "molkey": "molkey.png",
+    "dragen": "dragen.png",
+    "qiaxcel": "qiaxcel.ico",
     "solide": "solide.png",
 }
 
@@ -77,7 +79,7 @@ class ApplicationCard(QFrame):
         self.setObjectName("applicationCard")
         self.setAccessibleName(f"{module.name}, versjon {module.version}")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
-        self.setMinimumSize(280, 218)
+        self.setMinimumSize(280, 168)
 
         icon_label = QLabel()
         icon_label.setObjectName("moduleIcon")
@@ -107,10 +109,6 @@ class ApplicationCard(QFrame):
         top.addWidget(icon_label)
         top.addLayout(heading, 1)
 
-        description = QLabel(module.description_nb)
-        description.setObjectName("moduleDescription")
-        description.setWordWrap(True)
-
         self.status_label = QLabel()
         self.status_label.setObjectName("moduleStatus")
 
@@ -127,11 +125,9 @@ class ApplicationCard(QFrame):
         footer.addWidget(self.open_button)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 22, 24, 22)
-        layout.setSpacing(16)
+        layout.setContentsMargins(20, 18, 20, 18)
+        layout.setSpacing(12)
         layout.addLayout(top)
-        layout.addWidget(description)
-        layout.addStretch(1)
         layout.addLayout(footer)
 
     def set_enabled(self, enabled: bool) -> None:

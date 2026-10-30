@@ -13,7 +13,7 @@ from emolpat.ui.main_window import MainWindow
 from emolpat.ui.widgets import ApplicationCard, ApplicationGrid, StatusControl
 
 
-def test_portal_shows_seven_real_modules(
+def test_portal_shows_nine_real_modules(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -28,7 +28,9 @@ def test_portal_shows_seven_real_modules(
         "mpn-tolkning",
         "molstat",
         "molkey",
+        "dragen",
         "solide",
+        "qiaxcel",
     ]
     assert all(not card.module_icon.isNull() for card in window.application_cards)
     assert all(card.open_button.isEnabled() for card in window.application_cards)
@@ -55,7 +57,43 @@ def test_all_apps_share_the_default_page(qtbot, manifest, ready_report):
         module.id for module in manifest.modules
     }
     assert all(card.isVisibleTo(window) for card in cards)
-    assert window.results_label.text() == "7 apper"
+    assert window.results_label.text() == "9 apper"
+
+
+def test_app_cards_show_launch_information_without_descriptions(
+    qtbot, manifest, ready_report
+):
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.show()
+
+    for card in window.application_cards:
+        module = manifest.module(card.module_id)
+        labels = card.findChildren(QLabel)
+        assert not any(
+            label.objectName() == "moduleDescription" and label.isVisibleTo(window)
+            for label in labels
+        )
+        assert module.description_nb not in [label.text() for label in labels]
+        assert card.findChild(QLabel, "moduleName").text() == module.name
+        assert card.findChild(QLabel, "moduleVersion").text() == (
+            f"Versjon {module.version}"
+        )
+        assert not card.findChild(QLabel, "moduleIcon").pixmap().isNull()
+        assert card.status_label.isVisibleTo(window)
+        assert card.open_button.isVisibleTo(window)
+
+
+def test_compact_cards_fit_three_rows_in_a_wide_window(qtbot, manifest, ready_report):
+    window = MainWindow(manifest, ready_report)
+    qtbot.addWidget(window)
+    window.resize(1600, 800)
+    window.show()
+
+    qtbot.waitUntil(lambda: window.application_grid.columns == 3)
+
+    qtbot.waitUntil(lambda: window.app_scroll.verticalScrollBar().maximum() == 0)
+    assert all(card.isVisibleTo(window) for card in window.application_cards)
 
 
 def test_molkey_launches_and_keeps_portal_open(
@@ -232,7 +270,7 @@ def test_about_tab_opens_creator_and_portal_information(
     assert window.pages.currentWidget() is window.about_page
     assert "Om eMolPat" in about_copy
     assert "samlet portal for molekylærpatologiske analyseverktøy" in about_copy
-    assert "HemaFrag Diagnostics" in about_copy
+    assert "HemaFrag" in about_copy
     assert "IGH Merge" in about_copy
     assert "VPM / HTS Tolkning" in about_copy
     assert "MPN Tolkning" in about_copy

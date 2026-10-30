@@ -24,11 +24,13 @@ def visible_ids(window):
     ("query", "expected"),
     [
         ("  mOlKeY  ", ["molkey"]),
+        ("  DrAgEn  ", ["dragen"]),
+        ("qIaXcEl", ["qiaxcel"]),
         ("fragment", ["hemafrag"]),
         ("SOLIDE svulster", ["solide"]),
-        ("variant review", ["vpm-tolkning", "solide"]),
+        ("variant review", ["vpm-tolkning", "dragen", "solide"]),
         ("   ", ["hemafrag", "igh-merge", "vpm-tolkning", "mpn-tolkning",
-                 "molstat", "molkey", "solide"]),
+                 "molstat", "molkey", "dragen", "solide", "qiaxcel"]),
         ("<no app>", []),
     ],
 )
@@ -49,12 +51,12 @@ def test_typing_filters_and_clearing_restores_the_catalog(qtbot, window):
     search.setFocus()
     qtbot.keyClicks(search, "molkey")
     assert visible_ids(window) == ["molkey"]
-    assert window.results_label.text() == "1 av 7 apper"
+    assert window.results_label.text() == "1 av 9 apper"
 
     search.clear()
 
-    assert len(visible_ids(window)) == 7
-    assert window.results_label.text() == "7 apper"
+    assert len(visible_ids(window)) == 9
+    assert window.results_label.text() == "9 apper"
     assert search.isClearButtonEnabled()
     assert search.accessibleName() == "Søk etter apper"
 
@@ -65,11 +67,11 @@ def test_no_results_is_explained_and_can_be_cleared(qtbot, window):
     search.setText("<unknown>")
 
     assert window.empty_results.isVisibleTo(window)
-    assert window.results_label.text() == "0 av 7 apper"
+    assert window.results_label.text() == "0 av 9 apper"
     assert window.application_grid.grid.count() == 0
     qtbot.mouseClick(window.clear_search_button, Qt.MouseButton.LeftButton)
     assert search.text() == ""
-    assert len(visible_ids(window)) == 7
+    assert len(visible_ids(window)) == 9
     assert not window.empty_results.isVisible()
     assert search.hasFocus()
 
