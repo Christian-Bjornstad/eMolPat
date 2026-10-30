@@ -2,19 +2,19 @@
   "hemafrag": {
     "source_file": "assets/app_icon.png",
     "bundled_file": "hemafrag.png",
-    "commit": "d31466154ab62655df839875b4289b908d402fec",
+    "commit": "b2719a66599b41a304db1943db32d2dc70f8ca6f",
     "sha256": "47aa39f3118d3c82dd8fc7863c49889b9323cde2ed4cd83be8509a1923b8d7ca"
   },
   "igh-merge": {
     "source_file": "src/igh_merge/assets/igh-merge-icon.png",
     "bundled_file": "igh-merge.png",
-    "commit": "01315c0607c4d0556fe569fe7dd96db0bb935755",
+    "commit": "4cfd8dc5a116e078eed24bc3c271cb61130cd408",
     "sha256": "cf7a72e437187610a64d7c73b43421014cf9991441f7e41c402cb35ca7188f6d"
   },
   "vpm-tolkning": {
     "source_file": "src/archer_processor/assets/vpm-tolkning-icon.png",
     "bundled_file": "vpm-tolkning.png",
-    "commit": "c8092d194940e30062ef4d26059fd6233a508f3f",
+    "commit": "665314fb92767923e4bb00482af6c0d884cff7d2",
     "sha256": "994b37601aac689ff31894a5a1764e22d83b4a4a028a656431a61bf7c372274d"
   },
   "mpn-tolkning": {
@@ -26,13 +26,13 @@
   "molstat": {
     "source_file": "src/molstat/assets/molstat.png",
     "bundled_file": "molstat.png",
-    "commit": "6f0398d2a14faa307132807766e3e1d5c7d5930d",
+    "commit": "95de4eaf2c3805bb19034fd1260fb91af42541a8",
     "sha256": "ee29eefecec1e6a5e7246d1da84f94084ae168beca5f22ac5ae75f5ca2cc14db"
   },
   "molkey": {
     "source_file": "assets/molkey_icon_256.png",
     "bundled_file": "molkey.png",
-    "commit": "fd98d0263b04472db6a51ec09f18b859a4fabce8",
+    "commit": "c20dd2eefcf62e9947a9a0c0903f9e69c8d91c4f",
     "sha256": "86375fe7d9171338ee94be73801a5a1787fb04e8b93fcc74fb07a7f3ae6246da"
   },
   "dragen": {
@@ -44,7 +44,7 @@
   "solide": {
     "source_file": "src/solide/assets/solide.png",
     "bundled_file": "solide.png",
-    "commit": "429b1c3a5faed04807b92aec65d0ebd5f0d5cc8b",
+    "commit": "5462d9a438a69534dc607c5e92dead8b4fa03628",
     "sha256": "c1e963a50d6a2efac6fcc9ba48aba9b3470d6e1dcbfc1e3a63d42bafc3c121c4"
   },
   "qiaxcel": {

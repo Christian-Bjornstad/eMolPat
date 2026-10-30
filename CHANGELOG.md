@@ -1,6 +1,15 @@
 # Changelog
 
-## [1.4.1] - Unreleased
+## [1.4.2] - Unreleased
+
+- Installer uses its own extracted folder rather than a previous session's release.
+- Clear cached portal imports in reused Python FELLES sessions; refuse to start
+  an older installed portal from a newer release folder.
+- Show bootstrap error details directly, even when logging is unavailable.
+- Merge current application PRs and pin all nine repository default branches;
+  resynchronize every icon from those exact commits.
+
+## [1.4.1] - 2026-10-30
 
 - Refreshed VPM, MolKey and Solide icons from their exact pinned sources.
 - Added icon provenance and build checks for all nine apps, including the actual
