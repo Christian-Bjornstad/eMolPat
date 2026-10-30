@@ -439,30 +439,10 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(16)
-        title = QLabel("Om eMolPat")
-        title.setObjectName("pageTitle")
-        names = [module.name for module in self.manifest.modules]
-        applications = ", ".join(names[:-1]) + " og " + names[-1]
-        description = QLabel(
-            "eMolPat er en samlet portal for molekylærpatologiske analyseverktøy. "
-            f"Portalen gir enkel tilgang til {applications}, samtidig "
-            "som hvert program fortsetter å kjøre som et selvstendig verktøy."
-        )
-        description.setObjectName("pageIntro")
-        description.setWordWrap(True)
         creator = QLabel("Utviklet av Christian Bjørnstad")
         creator.setObjectName("aboutCreator")
-        guidance = QLabel(
-            "Diagnostikk viser teknisk systemstatus uten å vise analysedata. "
-            "Ved behov kan Teknisk hjelp bruke eMolPat-loggen til feilsøking."
-        )
-        guidance.setObjectName("pageIntro")
-        guidance.setWordWrap(True)
-
-        layout.addWidget(title)
-        layout.addWidget(description)
+        creator.setWordWrap(True)
         layout.addWidget(creator)
-        layout.addWidget(guidance)
         layout.addStretch(1)
         return page
 

@@ -1,6 +1,15 @@
 # Changelog
 
-## [1.4.0] - Unreleased
+## [1.4.1] - Unreleased
+
+- Refreshed VPM, MolKey and Solide icons from their exact pinned sources.
+- Added icon provenance and build checks for all nine apps, including the actual
+  contents of the portal wheel. Stale or missing icons now block release builds.
+- Simplified About to show only the developer credit.
+- Rechecked all remote branch heads; the existing component pins already match
+  the latest applicable source commits.
+
+## [1.4.0] - 2026-10-30
 
 - Added DRAGEN and Qiaxcel to the nine-application catalog.
 - Updated component pins to the reviewed current development branches, including

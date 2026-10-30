@@ -253,7 +253,7 @@ def test_portal_uses_plain_version_copy_and_removes_privacy_footer(
     assert "Ingen pasientdata lagres" not in visible_copy
 
 
-def test_about_tab_opens_creator_and_portal_information(
+def test_about_tab_shows_only_the_creator(
     qtbot,
     manifest: SuiteManifest,
     ready_report: HealthReport,
@@ -268,15 +268,7 @@ def test_about_tab_opens_creator_and_portal_information(
         label.text() for label in window.about_page.findChildren(QLabel)
     )
     assert window.pages.currentWidget() is window.about_page
-    assert "Om eMolPat" in about_copy
-    assert "samlet portal for molekylærpatologiske analyseverktøy" in about_copy
-    assert "HemaFrag" in about_copy
-    assert "IGH Merge" in about_copy
-    assert "VPM / HTS Tolkning" in about_copy
-    assert "MPN Tolkning" in about_copy
-    assert all(module.name in about_copy for module in manifest.modules)
-    assert "LVMS" not in about_copy
-    assert "Utviklet av Christian Bjørnstad" in about_copy
+    assert about_copy == "Utviklet av Christian Bjørnstad"
     assert window.about_button.accessibleName() == "Om eMolPat"
 
 
