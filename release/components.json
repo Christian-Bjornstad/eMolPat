@@ -58,7 +58,7 @@
   {
     "id": "molstat",
     "repository": "https://github.com/Christian-Bjornstad/MolStat.git",
-    "commit": "670a23e56343551aa09639109bcc785f8705b5ef",
+    "commit": "04138cdaf7bec79a156388cf8fc091dad37513ab",
     "distribution": "molstat",
     "import_name": "molstat",
     "entry_point": "emolpat.entrypoints:launch_molstat",

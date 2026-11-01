@@ -26,7 +26,7 @@
   "molstat": {
     "source_file": "src/molstat/assets/molstat.png",
     "bundled_file": "molstat.png",
-    "commit": "670a23e56343551aa09639109bcc785f8705b5ef",
+    "commit": "04138cdaf7bec79a156388cf8fc091dad37513ab",
     "sha256": "ee29eefecec1e6a5e7246d1da84f94084ae168beca5f22ac5ae75f5ca2cc14db"
   },
   "molkey": {
