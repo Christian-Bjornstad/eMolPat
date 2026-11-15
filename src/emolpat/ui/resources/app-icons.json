@@ -38,7 +38,7 @@
   "dragen": {
     "source_file": "assets/brand/abl1-dragon.png",
     "bundled_file": "dragen.png",
-    "commit": "0e243211c3d119595316ea13b472162352cac131",
+    "commit": "029482d6f4a2bf21cdd373d5d985b354d9a46d37",
     "sha256": "85680fff0f183c65792ff094b721e972eca79f2bef5772d8498fa029d83ecf55"
   },
   "solide": {
