@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="eMolPat suite 1.4.0" src="https://img.shields.io/badge/eMolPat-Suite%201.4.0-0c6669">
+  <img alt="eMolPat suite 1.4.3" src="https://img.shields.io/badge/eMolPat-Suite%201.4.3-0c6669">
   <img alt="Portal Python 3.12 through 3.15" src="https://img.shields.io/badge/Portal_Python-3.12%E2%80%933.15-3776AB?logo=python&amp;logoColor=white">
   <img alt="PyQt6 desktop portal" src="https://img.shields.io/badge/Desktop-PyQt6-41CD52?logo=qt&amp;logoColor=white">
   <img alt="Windows workstation" src="https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows&amp;logoColor=white">
@@ -63,9 +63,8 @@ catalog is scrollable, and new manifest entries appear automatically. Applicatio
 packaging and the approved component set are maintained through the existing
 release contract.
 
-The nine-app catalog is available in the published 1.4.0 release. The current
-1.4.1 candidate refreshes the VPM, MolKey and Solide icons and simplifies
-**Om eMolPat** to show only the developer credit.
+The nine-app catalog includes MolStat for LVMS statistics, backlog and
+operational reporting.
 
 ## Why eMolPat
 
@@ -109,7 +108,7 @@ flowchart LR
 An approved release contains:
 
 ```text
-eMolPat-1.4.0/
+eMolPat-1.4.3/
 ├── Installer eMolPat.cmd
 ├── Start eMolPat.cmd
 └── suite/                     Protected, verified offline payload
@@ -140,16 +139,10 @@ The initial deployment model targets Sykehuspartner-managed Windows computers us
 
 Installation is offline, uses `pip --user`, and writes the verified suite record only after all packages and imports pass. See the [Python FELLES guide](docs/operations/python-felles.md) for the complete operator workflow and the [repair guide](docs/operations/repair.md) for controlled recovery.
 
-### Python FELLES 3.14 release candidate
+### Python FELLES 3.14
 
-The `1.4.1` candidate contains exactly the nine applications above. MolStat
-replaces LVMS-STAT. Components are pinned to the current active implementation
-branches, including changes that have not yet reached the default branches. See the
-[repository audit](docs/validation/2026-10-30-component-audit.md).
-
-This candidate is built and checked locally before publication. Published older
-ZIPs still contain their original component set. See the
-[1.4.1 candidate notes](docs/releases/1.4.1.md) and the
+The offline release pins all nine applications to exact commits and targets
+64-bit Windows with Python FELLES 3.14. See the
 [Python compatibility policy](docs/operations/python-support.md).
 
 ## Health and recovery
@@ -211,11 +204,11 @@ Build and verify the atomic Windows release:
 
 ```powershell
 py -3.12 scripts\build_suite.py `
-  --version 1.4.1 `
+  --version 1.4.3 `
   --output dist `
   --component-root C:\path\to\eMolPat-components
 
-py -3.12 scripts\verify_suite.py dist\eMolPat-1.4.1
+py -3.12 scripts\verify_suite.py dist\eMolPat-1.4.3
 ```
 
 The build requires clean component trees at the exact commits in [`release/components.json`](release/components.json). It produces ten normalized package wheels, collects the checked-in hash-locked Windows dependency set, validates every transitive requirement, requested extra, target Python constraint, and wheel ABI, and writes a sorted cryptographic manifest.
@@ -245,8 +238,8 @@ eMolPat/
 - [Install through Python FELLES](docs/operations/python-felles.md)
 - [Repair the complete suite](docs/operations/repair.md)
 - [Managed-workstation release checklist](docs/validation/release-checklist.md)
-- [eMolPat 1.4.0 release notes](docs/releases/1.4.0.md)
+- [eMolPat 1.4.3 release notes](docs/releases/1.4.3.md)
 
 ## Release status
 
-Version 1.4.1 is a release candidate. Automated evidence and remaining limitations are recorded in its release notes. Managed-workstation installation through Ivanti/Python FELLES and the laboratory release checklist remain the operational acceptance steps.
+Version 1.4.3 includes the incremental MolStat pathology update. Managed-workstation installation through Ivanti/Python FELLES and the laboratory release checklist are the operational acceptance steps.

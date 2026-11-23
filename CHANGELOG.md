@@ -1,6 +1,12 @@
 # Changelog
 
-## [1.4.2] - Unreleased
+## [1.4.3] - 2026-11-23
+
+- MolStat pathology updates start on the last archived arrival date. Initial
+  loads use 12-month windows and fall back to 6, 3, then 1 month after transient
+  LVMS errors. Confirmed windows are archived so an interrupted load can resume.
+
+## [1.4.2] - 2026-10-30
 
 - Installer uses its own extracted folder rather than a previous session's release.
 - Clear cached portal imports in reused Python FELLES sessions; refuse to start
