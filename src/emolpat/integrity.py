@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from packaging.utils import InvalidWheelFilename, parse_wheel_filename
+from packaging.version import Version
+
 from emolpat.domain import (
     SuiteManifest,
     VerificationIssue,
@@ -43,7 +46,20 @@ def _release_file(root: Path, relative_path: str) -> Path:
     return candidate
 
 
-def verify_release(root: Path, manifest: SuiteManifest) -> VerificationReport:
+def _portal_wheel_version(relative_path: str) -> Version | None:
+    path = Path(relative_path)
+    if path.parent != Path("packages") or not path.name.startswith("emolpat-"):
+        return None
+    try:
+        _, version, _, _ = parse_wheel_filename(path.name)
+    except InvalidWheelFilename:
+        return None
+    return version
+
+
+def verify_release(
+    root: Path, manifest: SuiteManifest, *, allow_older_portal_wheels: bool = False
+) -> VerificationReport:
     """Verify required structure and every manifest-declared file."""
     release_root = root.resolve()
     issues: list[VerificationIssue] = []
@@ -94,7 +110,19 @@ def verify_release(root: Path, manifest: SuiteManifest) -> VerificationReport:
         for path in release_root.rglob("*")
         if path.is_file() and path.name != "manifest.json"
     }
-    for relative_path in sorted(actual_paths - declared_paths):
+    unexpected = actual_paths - declared_paths
+    if allow_older_portal_wheels:
+        portal_versions = [
+            version for path in declared_paths
+            if (version := _portal_wheel_version(path)) is not None
+        ]
+        if len(portal_versions) == 1:
+            current = portal_versions[0]
+            unexpected = {
+                path for path in unexpected
+                if (version := _portal_wheel_version(path)) is None or version >= current
+            }
+    for relative_path in sorted(unexpected):
         issues.append(
             VerificationIssue(
                 code="unexpected_file",

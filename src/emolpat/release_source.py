@@ -24,7 +24,8 @@ def _verified_release(candidate: Path) -> Path | None:
         ):
             return None
         manifest = load_manifest(root / "manifest.json")
-        return root if verify_release(root, manifest).ok else None
+        report = verify_release(root, manifest, allow_older_portal_wheels=True)
+        return root if report.ok else None
     except (OSError, ValueError, ManifestError):
         return None
 

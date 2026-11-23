@@ -39,10 +39,14 @@ class CommandRunner(Protocol):
 def build_pip_commands(
     release_root: Path,
     user_site: Path | None = None,
+    *,
+    manifest: SuiteManifest | None = None,
 ) -> tuple[Command, ...]:
     """Build exact offline pip commands; ``user_site`` documents the boundary."""
     del user_site
     root = release_root.resolve()
+    manifest = manifest if manifest is not None else load_manifest(root / "manifest.json")
+    declared_files = tuple(root / file.path for file in manifest.files)
     common = (
         sys.executable,
         "-m",
@@ -58,7 +62,7 @@ def build_pip_commands(
         argv=(sys.executable, "-m", "ensurepip", "--user", "--upgrade"),
     )
     # Second command: ensure pip itself is available from local wheelhouse
-    pip_wheel = sorted((root / "wheelhouse").glob("pip-*.whl"))
+    pip_wheel = [path for path in declared_files if path.match("wheelhouse/pip-*.whl")]
     if not pip_wheel:
         raise RuntimeError("pip wheel not found in wheelhouse")
     ensure_pip = Command(
@@ -76,7 +80,7 @@ def build_pip_commands(
             str(root / "requirements.lock"),
         ),
     )
-    wheels = tuple(str(path) for path in sorted((root / "packages").glob("*.whl")))
+    wheels = tuple(str(path) for path in sorted(declared_files) if path.match("packages/*.whl"))
     components = Command(
         stage="components",
         argv=(*common, "--no-deps", "--force-reinstall", *wheels),
@@ -154,17 +158,18 @@ def _runner_verifies(runner: CommandRunner, manifest: SuiteManifest) -> bool:
     return _verify_installed(manifest)
 
 
-def _retain_release(release_root: Path, paths: UserPaths, version: str) -> None:
+def _retain_release(release_root: Path, paths: UserPaths, manifest: SuiteManifest) -> None:
     """Retain immutable offline inputs so this version can be restored later."""
-    destination = paths.rollback / version
+    destination = paths.rollback / manifest.suite_version
     if destination.exists():
         return
-    temporary = paths.rollback / f".{version}.tmp"
+    temporary = paths.rollback / f".{manifest.suite_version}.tmp"
     temporary.mkdir(parents=True, exist_ok=False)
-    for filename in ("manifest.json", "requirements.lock"):
-        shutil.copy2(release_root / filename, temporary / filename)
-    for directory in ("packages", "wheelhouse"):
-        shutil.copytree(release_root / directory, temporary / directory)
+    shutil.copy2(release_root / "manifest.json", temporary / "manifest.json")
+    for file in manifest.files:
+        target = temporary / file.path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(release_root / file.path, target)
     temporary.rename(destination)
 
 
@@ -185,7 +190,7 @@ def _attempt_rollback(
         manifest = load_historical_manifest(manifest_path, previous)
         if not verify_release(retained, manifest).ok:
             return False
-        for command in build_pip_commands(retained):
+        for command in build_pip_commands(retained, manifest=manifest):
             if runner(command) != 0:
                 return False
         return _runner_verifies(runner, manifest)
@@ -207,7 +212,7 @@ def install_release(
     root = release_root.resolve()
     try:
         manifest = load_manifest(root / "manifest.json")
-        integrity = verify_release(root, manifest)
+        integrity = verify_release(root, manifest, allow_older_portal_wheels=True)
         supported_python = Version(
             f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
         ) in SpecifierSet(manifest.python_requires)
@@ -220,7 +225,7 @@ def install_release(
         previous = read_install_record(paths.install_record)
     except InstallRecordError:
         return InstallResult(ok=False, stage="preflight")
-    for command in build_pip_commands(root):
+    for command in build_pip_commands(root, manifest=manifest):
         report_progress(command.stage)
         code = runner(command)
         if code != 0:
@@ -256,7 +261,7 @@ def install_release(
         ),
     )
     try:
-        _retain_release(root, paths, manifest.suite_version)
+        _retain_release(root, paths, manifest)
         replace_install_record(paths.install_record, record)
     except OSError:
         rolled_back = _attempt_rollback(previous, runner, paths)

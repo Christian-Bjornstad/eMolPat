@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import runpy
 import site
 import sys
@@ -38,6 +40,30 @@ def test_installer_bootstraps_emolpat_from_local_release_only() -> None:
     assert "packages" in text
     assert "install_release" in text
     assert "http://" not in text and "https://" not in text
+
+
+def test_bootstrap_selects_verified_portal_wheel_from_manifest(monkeypatch, tmp_path):
+    current = [
+        "packages/emolpat-0.4.3-py3-none-any.whl",
+        "wheelhouse/packaging-25.0-py3-none-any.whl",
+    ]
+    for name in [*current, "packages/emolpat-0.4.2-py3-none-any.whl"]:
+        wheel = tmp_path / name
+        wheel.parent.mkdir(exist_ok=True)
+        wheel.write_bytes(name.encode())
+    manifest = {"files": [
+        {"path": name, "sha256": hashlib.sha256(name.encode()).hexdigest()}
+        for name in current
+    ]}
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    namespace = runpy.run_path(str(PACKAGING / "install_emolpat.py"))
+    monkeypatch.setattr(sys, "path", sys.path.copy())
+    namespace["_activate_bootstrap_wheels"](tmp_path)
+    assert sys.path[:2] == [str(tmp_path / name) for name in current]
+
+    (tmp_path / current[0]).write_bytes(b"corrupt")
+    with pytest.raises(RuntimeError, match="Kontrollsummen"):
+        namespace["_activate_bootstrap_wheels"](tmp_path)
 
 
 def test_bootstrap_scripts_use_their_extracted_release_directory() -> None:

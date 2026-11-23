@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib
+import json
 import os
 import site
 import sys
@@ -31,11 +33,26 @@ def release_root() -> Path:
 
 
 def _activate_bootstrap_wheels(root: Path) -> None:
-    portal_wheels = sorted((root / "packages").glob("emolpat-*.whl"))
-    packaging_wheels = sorted((root / "wheelhouse").glob("packaging-*.whl"))
-    if len(portal_wheels) != 1 or len(packaging_wheels) != 1:
-        raise RuntimeError("eMolPat-pakken er ufullstendig")
-    sys.path[:0] = [str(portal_wheels[0]), str(packaging_wheels[0])]
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    selected = []
+    for folder, prefix in (("packages", "emolpat-"), ("wheelhouse", "packaging-")):
+        entries = [
+            entry for entry in manifest["files"]
+            if Path(entry["path"]).parent == Path(folder)
+            and Path(entry["path"]).name.startswith(prefix)
+            and Path(entry["path"]).suffix == ".whl"
+        ]
+        if len(entries) != 1:
+            raise RuntimeError(f"Manifestet må angi ett hjul for {prefix.rstrip('-')}.")
+        entry = entries[0]
+        wheel = (root / entry["path"]).resolve()
+        if not wheel.is_relative_to(root) or not wheel.is_file():
+            raise RuntimeError(f"Installasjonspakken mangler {Path(entry['path']).name}.")
+        with wheel.open("rb") as source:
+            if hashlib.file_digest(source, "sha256").hexdigest() != entry["sha256"]:
+                raise RuntimeError(f"Kontrollsummen stemmer ikke for {wheel.name}.")
+        selected.append(str(wheel))
+    sys.path[:0] = selected
 
 
 def _record_startup_failure(error: BaseException) -> None:

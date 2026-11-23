@@ -136,6 +136,22 @@ def test_successful_install_writes_verified_record_atomically(tmp_path: Path) ->
     assert (paths.rollback / "1.1.0" / "manifest.json").is_file()
 
 
+def test_install_ignores_and_does_not_retain_an_older_portal_wheel(tmp_path: Path) -> None:
+    release = create_release(tmp_path / "release")
+    stale = release / "packages" / "emolpat-1.0.0-py3-none-any.whl"
+    stale.write_bytes(b"older wheel")
+    paths = paths_at(tmp_path / "user")
+    runner = RecordingRunner()
+
+    assert install_release(release, runner, paths).ok
+    assert str(stale) not in runner.commands[3].argv
+    assert stale.is_file()
+    assert not (paths.rollback / "1.1.0" / "packages" / stale.name).exists()
+
+    (release / "packages" / "unexpected.whl").touch()
+    assert install_release(release, RecordingRunner(), paths).stage == "preflight"
+
+
 def test_successful_install_reports_stages_in_order(tmp_path: Path) -> None:
     release = create_release(tmp_path / "release")
     # Add a pip wheel to the test release
